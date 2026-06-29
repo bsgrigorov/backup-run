@@ -1,5 +1,4 @@
 import os
-import readline  # Imported to support arrow key navigation during input
 import subprocess
 import sys
 from difflib import unified_diff
@@ -46,7 +45,7 @@ def git_set_remote(repo, remote_url):
     """
     Sets git repo upstream URL and fast-forwards history.
     """
-    print_path_yellow("Setting remote URL to:", "{}...".format(remote_url))
+    print_path_yellow("Setting remote URL to:", f"{remote_url}...")
 
     try:
         origin = repo.create_remote("origin", remote_url)
@@ -66,9 +65,7 @@ def create_gitignore(dir_path, key: str):
     """
     safe_mkdir(dir_path)
     gitignore_path = os.path.join(dir_path, ".gitignore")
-    print_yellow_bold(
-        f"Updating .gitignore file at {gitignore_path} with config from {key}"
-    )
+    print_yellow_bold(f"Updating .gitignore file at {gitignore_path} with config from {key}")
     try:
         files_to_ignore = get_config()[key]
     except KeyError:
@@ -82,7 +79,7 @@ def create_gitignore(dir_path, key: str):
             sys.exit(1)
     with open(os.path.join(dir_path, ".gitignore"), "w+") as f:
         for ignore in files_to_ignore:
-            f.write("{}\n".format(ignore))
+            f.write(f"{ignore}\n")
 
 
 def safe_git_init(dir_path) -> tuple[git.Repo, bool]:

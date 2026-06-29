@@ -5,7 +5,7 @@
 #   -s  sudo-only steps (sfltool login items). Requires cached sudo (sudo -v).
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PATH="/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin:${HOME}/.local/bin:${PATH:-}"
 
 usage() {
@@ -17,7 +17,7 @@ Usage: $(basename "$0") [-s] [-h]
   -h         this help
 
 Tool repo: $ROOT
-Data repo: \$BACKUP_ROOT (from ~/.config/backup-run.conf)
+Data repo: \$BACKUP_ROOT (from manifest/backup-run.conf)
 EOF
 }
 
@@ -33,7 +33,7 @@ done
 export BACKUP_SUDO
 
 if ! command -v backup-run >/dev/null 2>&1; then
-    echo "backup: backup-run not found — pipx install -e $ROOT" >&2
+    echo "backup: backup-run not found — pipx install -e $ROOT (or: uv tool install -e $ROOT)" >&2
     exit 1
 fi
 

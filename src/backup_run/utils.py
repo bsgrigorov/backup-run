@@ -1,24 +1,25 @@
 import os
-import sys
-from colorama import Fore
-import subprocess as sp
-from shlex import split
 import shutil
-from shutil import rmtree, copytree, copyfile
+import subprocess as sp
+import sys
 from pathlib import Path
 from re import fullmatch
-from typing import Union, List
+from shlex import split
+from shutil import copyfile, copytree, rmtree
+
+from colorama import Fore
+
 from .printing import (
-    print_path_red,
-    print_red_bold,
-    print_path_blue,
-    print_red,
     print_blue,
+    print_path_blue,
+    print_path_red,
+    print_red,
+    print_red_bold,
     prompt_yes_no,
 )
 
 
-def run_cmd(command: Union[str, List]):
+def run_cmd(command: str | list):
     """
     Wrapper on subprocess.run to handle shell commands as either a list of args
     or a single string.
@@ -68,9 +69,7 @@ def run_cmd_return_bool(command: str) -> bool:
     return os.system(f"/bin/bash -c '{command}'") == 0
 
 
-def evaluate_condition(
-    condition: str, backup_or_reinstall: str, dotfile_path: str
-) -> bool:
+def evaluate_condition(condition: str, backup_or_reinstall: str, dotfile_path: str) -> bool:
     """Evaluates the condition, if it exists, in bash and returns True or False, while providing output
     detailing what is going on.
     :param condition: A string that will be evaluated by bash.
@@ -78,14 +77,10 @@ def evaluate_condition(
     :param dotfile_path: Path to dotfile (relative to $HOME, or absolute) for which the condition is being evaluated
     """
     if condition:
-        print_blue(
-            f"\n{backup_or_reinstall.capitalize()} condition detected for {dotfile_path}."
-        )
+        print_blue(f"\n{backup_or_reinstall.capitalize()} condition detected for {dotfile_path}.")
         condition_success = run_cmd_return_bool(condition)
         if not condition_success:
-            print_blue(
-                f"SKIPPING {backup_or_reinstall.lower()} b/c this is false: $ {condition}"
-            )
+            print_blue(f"SKIPPING {backup_or_reinstall.lower()} b/c this is false: $ {condition}")
             return False
         else:
             print_blue(
@@ -177,7 +172,7 @@ def overwrite_dir_prompt_if_needed(path: str, no_confirm: bool):
 def exit_if_dir_is_empty(backup_path: str, backup_type: str):
     """Exit if the backup_path is not a directory or contains no files."""
     if not os.path.isdir(backup_path) or not os.listdir(backup_path):
-        print_red_bold("No {} backup found.".format(backup_type))
+        print_red_bold(f"No {backup_type} backup found.")
         sys.exit(1)
 
 
@@ -187,7 +182,7 @@ def destroy_backup_dir(backup_path):
         print_path_red("Deleting backup directory:", backup_path)
         rmtree(backup_path)
     except OSError as e:
-        print_red_bold("Error: {} - {}".format(e.filename, e.strerror))
+        print_red_bold(f"Error: {e.filename} - {e.strerror}")
 
 
 def get_abs_path_subfiles(directory: str) -> list:

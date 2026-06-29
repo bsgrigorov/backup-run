@@ -1,11 +1,11 @@
 import os
-import sys
+
 import inquirer
-import readline
-from .utils import *
-from .printing import *
+
 from .config import *
 from .git_wrapper import git_set_remote, move_git_repo
+from .printing import *
+from .utils import *
 from .utils import check_if_path_is_valid_dir
 
 
@@ -16,9 +16,7 @@ def path_update_prompt(config):
     """
     current_path = config["backup_path"]
     print_path_blue("Current backup path:", current_path)
-    if prompt_yes_no(
-        "Would you like to move this somewhere else?", Fore.GREEN, invert=True
-    ):
+    if prompt_yes_no("Would you like to move this somewhere else?", Fore.GREEN, invert=True):
         while True:
             print_green_bold("Enter relative or absolute path:")
             abs_path = expand_to_abs_path(input())
@@ -42,9 +40,7 @@ def git_url_prompt(repo):
     print_red_bold(
         "WARNING: If you back up to a public remote, make sure no sensitive files are included by modifying the .gitignore."
     )
-    if prompt_yes_no(
-        "Would you like to set a remote URL for this git repo?", Fore.GREEN
-    ):
+    if prompt_yes_no("Would you like to set a remote URL for this git repo?", Fore.GREEN):
         print_green_bold("Enter URL:")
         remote_url = input()
         git_set_remote(repo, remote_url)
@@ -74,13 +70,13 @@ def add_to_config_prompt():
 
     # Prompt until we get a valid path.
     while True:
-        print_green_bold("Enter a path to add to {}:".format(section))
+        print_green_bold(f"Enter a path to add to {section}:")
         expanded_path = expand_to_abs_path(input())
         split_path = expanded_path.split("/")
 
         # Check if path exists.
         if not os.path.exists(expanded_path):
-            print_red_bold("ERR: {} doesn't exist.".format(expanded_path))
+            print_red_bold(f"ERR: {expanded_path} doesn't exist.")
             continue
 
         config_key = None
@@ -93,10 +89,10 @@ def add_to_config_prompt():
             # Determine if adding to dotfiles or dotfolders
             if not os.path.isdir(expanded_path):
                 config_key = "dotfiles"
-                print_blue_bold("Adding {} to dotfile backup.".format(expanded_path))
+                print_blue_bold(f"Adding {expanded_path} to dotfile backup.")
             else:
                 config_key = "dotfolders"
-                print_blue_bold("Adding {} to dotfolder backup.".format(expanded_path))
+                print_blue_bold(f"Adding {expanded_path} to dotfolder backup.")
 
             # Add path to config ensuring no duplicates.
             updated_config_key = set(config[config_key] + [path])
@@ -110,7 +106,7 @@ def add_to_config_prompt():
             dir_name = input()
             config_key = "config_mapping"
             to_add_to_cfg = (expanded_path, dir_name)
-            print_blue_bold("Adding {} to config backup.".format(expanded_path))
+            print_blue_bold(f"Adding {expanded_path} to config backup.")
 
             # Get dictionary of {path_to_backup: dest, ...}
             config_path_dict = config[config_key]
@@ -155,7 +151,7 @@ def remove_from_config_prompt():
         )
     ]
     path_to_remove = inquirer.prompt(path_prompt).get("choice")
-    print_blue_bold("Removing {} from backup...".format(path_to_remove))
+    print_blue_bold(f"Removing {path_to_remove} from backup...")
     paths.remove(path_to_remove)
     config[section] = paths
     write_config(config)
@@ -168,10 +164,7 @@ def main_menu_prompt():
     questions = [
         inquirer.List(
             "choice",
-            message=Fore.GREEN
-            + Style.BRIGHT
-            + "What would you like to do?"
-            + Fore.BLUE,
+            message=Fore.GREEN + Style.BRIGHT + "What would you like to do?" + Fore.BLUE,
             choices=[
                 " Back up all",
                 " Back up configs",

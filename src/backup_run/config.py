@@ -1,50 +1,41 @@
-import os
-import sys
 import json
+import os
 import stat
-from os import path, environ, chmod
-from .printing import *
-from .compatibility import *
-from .utils import safe_mkdir, strip_home
-from .constants import ProjInfo
+import sys
 from functools import lru_cache
+from os import environ, path
+from pathlib import Path
+
+from .compatibility import *
+from .constants import ProjInfo
+from .printing import *
+from .utils import strip_home
 
 
-def get_xdg_config_path() -> str:
-    """Returns BACKUP_RUN_CONFIG_DIR, XDG_CONFIG_HOME, or ~/.config."""
-    return (
-        environ.get("BACKUP_RUN_CONFIG_DIR")
-        or environ.get("SHALLOW_BACKUP_CONFIG_DIR")
-        or environ.get("XDG_CONFIG_HOME")
-        or path.join(path.expanduser("~"), ".config")
-    )
+def _manifest_candidates() -> list[Path]:
+    """Editable install: repo manifest/. Wheel: bundled copy under backup_run/."""
+    repo_root = Path(__file__).resolve().parent.parent.parent
+    pkg_root = Path(__file__).resolve().parent
+    return [
+        repo_root / "manifest" / "backup-run.conf",
+        pkg_root / "manifest" / "backup-run.conf",
+    ]
 
 
 @lru_cache(maxsize=1)
 def get_config_path() -> str:
-    """
-    Detects if in testing or prod env, and returns the right config path.
-    :return: Path to config.
-    """
-    test_config_path = environ.get("BACKUP_RUN_TEST_CONFIG_PATH", None)
-    config_dir = get_xdg_config_path()
-    primary_config_path = path.join(config_dir, "backup-run.conf")
-    legacy_config_path = path.join(config_dir, "shallow-backup.conf")
-    legacy_json_path = path.join(config_dir, "shallow-backup.json")
+    test_config_path = environ.get("BACKUP_RUN_TEST_CONFIG_PATH")
     if test_config_path:
         return test_config_path
-    elif path.exists(primary_config_path):
-        return primary_config_path
-    elif path.exists(legacy_config_path):
-        return legacy_config_path
-    else:
-        return legacy_json_path
+    for candidate in _manifest_candidates():
+        if candidate.is_file():
+            return str(candidate)
+    expected = _manifest_candidates()[0]
+    print_red_bold(f"ERROR: Config not found at {expected}")
+    sys.exit(1)
 
 
 def get_config() -> dict:
-    """
-    :return Config.
-    """
     config_path = get_config_path()
     with open(config_path) as file:
         try:
@@ -56,9 +47,6 @@ def get_config() -> dict:
 
 
 def write_config(config) -> None:
-    """
-    Write to config file
-    """
     with open(get_config_path(), "w") as file:
         json.dump(config, file, indent=4)
 
@@ -95,21 +83,8 @@ def get_default_config() -> dict:
 
 
 def safe_create_config() -> None:
-    """
-    Creates config file (with 644 permissions) if it doesn't exist already. Prompts to update
-    it if an outdated version is detected.
-    """
-    backup_config_path = get_config_path()
-    # If it doesn't exist, create it.
-    if not os.path.exists(backup_config_path):
-        print_path_blue("Creating config file at:", backup_config_path)
-        backup_config = get_default_config()
-        safe_mkdir(os.path.split(backup_config_path)[0])
-        write_config(backup_config)
-        # $ chmod 644 config_file
-        chmod(
-            get_config_path(), stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IROTH
-        )
+    """Ensure manifest/backup-run.conf exists."""
+    get_config_path()
 
 
 def check_insecure_config_permissions() -> bool:
@@ -156,9 +131,7 @@ def add_dot_path_to_config(backup_config: dict, file_path: str) -> dict:
 
 
 def edit_config():
-    """
-    Open the config in the default editor
-    """
+    """Open the config in the default editor."""
     config_path = get_config_path()
     editor = os.environ.get("EDITOR", "vim")
     os.system(f"{editor} {config_path}")

@@ -1,20 +1,20 @@
-import os
 import json
-from shlex import quote
-from colorama import Fore
 import multiprocessing as mp
-from pathlib import Path
-from shutil import copyfile, copytree
+import os
 import shutil
-from .utils import *
-from .printing import *
+from pathlib import Path
+from shlex import quote
+from shutil import copyfile, copytree
+
+from colorama import Fore
+
 from .compatibility import *
 from .config import get_config
+from .printing import *
+from .utils import *
 
 
-def backup_dotfiles(
-    backup_dest_path, dry_run=False, home_path=os.path.expanduser("~"), skip=False
-):
+def backup_dotfiles(backup_dest_path, dry_run=False, home_path=os.path.expanduser("~"), skip=False):
     """
     Create `dotfiles` dir and makes copies of dotfiles and dotfolders.
     Assumes that dotfiles are stored in the home directory.
@@ -47,18 +47,12 @@ def backup_dotfiles(
         if dotfile_path_from_config.startswith("/"):
             installed_dotfile_path = dotfile_path_from_config
             installed_dotfile_path = quote(":" + installed_dotfile_path[1:])
-            backup_dotfile_path = quote(
-                os.path.join(backup_dest_path, installed_dotfile_path)
-            )
+            backup_dotfile_path = quote(os.path.join(backup_dest_path, installed_dotfile_path))
             dot_path_pairs.append((dotfile_path_from_config, backup_dotfile_path))
 
         else:  # Dotfile living in $HOME
-            installed_dotfile_path = quote(
-                os.path.join(home_path, dotfile_path_from_config)
-            )
-            backup_dotfile_path = quote(
-                os.path.join(backup_dest_path, dotfile_path_from_config)
-            )
+            installed_dotfile_path = quote(os.path.join(home_path, dotfile_path_from_config))
+            backup_dotfile_path = quote(os.path.join(backup_dest_path, dotfile_path_from_config))
             dot_path_pairs.append((installed_dotfile_path, backup_dotfile_path))
 
     # Separate dotfiles and dotfolders
@@ -177,9 +171,7 @@ def backup_packages(backup_path, dry_run: bool = False, skip=False):
 
     # cargo
     print_pkg_mgr_backup("cargo")
-    command = (
-        r"cargo install --list | grep '^\w.*:$' | sed -E 's/ v(.*):$/ --version \1/'"
-    )
+    command = r"cargo install --list | grep '^\w.*:$' | sed -E 's/ v(.*):$/ --version \1/'"
     dest = f"{backup_path}/cargo_list.txt"
     run_cmd_if_no_dry_run(command, dest, dry_run)
 
@@ -200,12 +192,10 @@ def backup_packages(backup_path, dry_run: bool = False, skip=False):
     command = "npm ls --global --json=true --depth=0"
     temp_file_path = f"{backup_path}/npm_temp_list.json"
     # If command is successful, go to the next parsing step.
-    npm_backup_cmd_success = (
-        run_cmd_if_no_dry_run(command, temp_file_path, dry_run) == 0
-    )
+    npm_backup_cmd_success = run_cmd_if_no_dry_run(command, temp_file_path, dry_run) == 0
     if npm_backup_cmd_success:
         npm_dest_file = f"{backup_path}/npm_list.txt"
-        with open(temp_file_path, "r") as temp_file:
+        with open(temp_file_path) as temp_file:
             npm_packages = json.load(temp_file).get("dependencies").keys()
             if len(npm_packages) >= 1:
                 with open(npm_dest_file, "w") as dest:
@@ -228,7 +218,7 @@ def backup_packages(backup_path, dry_run: bool = False, skip=False):
     # system installs
     print_pkg_mgr_backup("System Applications")
     applications_path = get_applications_dir()
-    command = "ls {}".format(applications_path)
+    command = f"ls {applications_path}"
     dest = f"{backup_path}/system_apps_list.txt"
     run_cmd_if_no_dry_run(command, dest, dry_run)
 
@@ -258,9 +248,7 @@ def backup_fonts(backup_path: str, dry_run: bool = False, skip: bool = False):
         print_red("Skipping fonts backup. No fonts directory found.")
 
 
-def backup_all(
-    dotfiles_path, packages_path, fonts_path, configs_path, dry_run=False, skip=False
-):
+def backup_all(dotfiles_path, packages_path, fonts_path, configs_path, dry_run=False, skip=False):
     """Complete backup procedure (fonts skipped — not used on this machine)."""
     backup_dotfiles(dotfiles_path, dry_run=dry_run, skip=skip)
     backup_packages(packages_path, dry_run=dry_run, skip=skip)

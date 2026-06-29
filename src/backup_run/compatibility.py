@@ -15,24 +15,16 @@ def get_home() -> str:
 def get_config_paths():
     """Returns a dict of config paths for the correct OS."""
     if get_os_name() == "darwin":
-        sublime2_path = os.path.join(
-            get_home(), "Library/Application Support/Sublime Text 2"
-        )
-        sublime3_path = os.path.join(
-            get_home(), "Library/Application Support/Sublime Text 3"
-        )
+        sublime2_path = os.path.join(get_home(), "Library/Application Support/Sublime Text 2")
+        sublime3_path = os.path.join(get_home(), "Library/Application Support/Sublime Text 3")
         vscode_path_1 = os.path.join(
             get_home(), "Library/Application Support/Code/User/settings.json"
         )
-        vscode_path_2 = os.path.join(
-            get_home(), "Library/Application Support/Code/User/Snippets"
-        )
+        vscode_path_2 = os.path.join(get_home(), "Library/Application Support/Code/User/Snippets")
         vscode_path_3 = os.path.join(
             get_home(), "Library/Application Support/Code/User/keybindings.json"
         )
-        terminal_path = os.path.join(
-            get_home(), "Library/Preferences/com.apple.Terminal.plist"
-        )
+        terminal_path = os.path.join(get_home(), "Library/Preferences/com.apple.Terminal.plist")
 
         return {
             sublime2_path: "sublime2",

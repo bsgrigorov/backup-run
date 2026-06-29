@@ -55,12 +55,8 @@ from .utils import (
 
 # custom help options
 @click.command(context_settings=dict(help_option_names=["-h", "-help", "--help"]))
-@click.option(
-    "--add-dot", default=None, help="Add a dotfile or dotfolder to config by path."
-)
-@click.option(
-    "--backup-all", "backup_all_flag", is_flag=True, default=False, help="Full back up."
-)
+@click.option("--add-dot", default=None, help="Add a dotfile or dotfolder to config by path.")
+@click.option("--backup-all", "backup_all_flag", is_flag=True, default=False, help="Full back up.")
 @click.option(
     "--backup-configs",
     "backup_configs_flag",
@@ -89,12 +85,8 @@ from .utils import (
     default=False,
     help="Back up package libraries.",
 )
-@click.option(
-    "--delete-config", is_flag=True, default=False, help="Delete config file."
-)
-@click.option(
-    "--destroy-backup", is_flag=True, default=False, help="Delete backup directory."
-)
+@click.option("--delete-config", is_flag=True, default=False, help="Delete config file.")
+@click.option("--destroy-backup", is_flag=True, default=False, help="Delete backup directory.")
 @click.option(
     "--dry-run",
     is_flag=True,
@@ -108,15 +100,9 @@ from .utils import (
     default=False,
     help="Skip setting new back up directory path prompt.",
 )
-@click.option(
-    "--no-splash", is_flag=True, default=False, help="Don't display splash screen."
-)
-@click.option(
-    "--reinstall-all", is_flag=True, default=False, help="Full reinstallation."
-)
-@click.option(
-    "--reinstall-configs", is_flag=True, default=False, help="Reinstall configs."
-)
+@click.option("--no-splash", is_flag=True, default=False, help="Don't display splash screen.")
+@click.option("--reinstall-all", is_flag=True, default=False, help="Full reinstallation.")
+@click.option("--reinstall-configs", is_flag=True, default=False, help="Reinstall configs.")
 @click.option(
     "--reinstall-dots",
     is_flag=True,
@@ -124,18 +110,14 @@ from .utils import (
     help="Reinstall dotfiles and dotfolders.",
 )
 @click.option("--reinstall-fonts", is_flag=True, default=False, help="Reinstall fonts.")
-@click.option(
-    "--reinstall-packages", is_flag=True, default=False, help="Reinstall packages."
-)
+@click.option("--reinstall-packages", is_flag=True, default=False, help="Reinstall packages.")
 @click.option("--remote", default=None, help="Set remote URL for the git repo.")
-@click.option(
-    "--edit", is_flag=True, default=False, help="Open config file in $EDITOR."
-)
+@click.option("--edit", is_flag=True, default=False, help="Open config file in $EDITOR.")
 @click.option(
     "--skip-git",
     is_flag=True,
     default=False,
-    help="Sync only; do not commit or push (used by bin/backup).",
+    help="Sync only; do not commit or push (used by ./backup).",
 )
 @click.option(
     "--version",
@@ -169,7 +151,7 @@ def cli(
 ):
     """
     Easily back up installed packages, dotfiles, and app configs to a git repo.
-    Config: ~/.config/backup-run.conf (legacy: shallow-backup.conf).
+    Config: manifest/backup-run.conf in the tool repo.
     """
     safe_create_config()
     check_if_config_upgrade_needed()
@@ -345,14 +327,10 @@ def cli(
             elif action.startswith("remove"):
                 remove_from_config_prompt()
         elif action == "destroy":
-            if prompt_yes_no(
-                "Erase backup directory: {}?".format(backup_home_path), Fore.RED
-            ):
+            if prompt_yes_no(f"Erase backup directory: {backup_home_path}?", Fore.RED):
                 destroy_backup_dir(backup_home_path)
             else:
-                print_red_bold(
-                    "Exiting to prevent accidental deletion of backup directory."
-                )
+                print_red_bold("Exiting to prevent accidental deletion of backup directory.")
 
     sys.exit()
 

@@ -1,19 +1,21 @@
 import os
+from pathlib import Path
 from shlex import quote
-from .utils import (
-    run_cmd,
-    get_abs_path_subfiles,
-    exit_if_dir_is_empty,
-    safe_mkdir,
-    evaluate_condition,
-    find_path_for_permission_error_reporting,
-)
-from .printing import *
+from shutil import copy, copyfile, copytree
+
 from colorama import Fore, Style
+
 from .compatibility import *
 from .config import get_config
-from pathlib import Path, PurePath
-from shutil import copytree, copyfile, copy
+from .printing import *
+from .utils import (
+    evaluate_condition,
+    exit_if_dir_is_empty,
+    find_path_for_permission_error_reporting,
+    get_abs_path_subfiles,
+    run_cmd,
+    safe_mkdir,
+)
 
 # NOTE: Naming convention is like this since the CLI flags would otherwise
 #       conflict with the function names.
@@ -90,14 +92,12 @@ def reinstall_dots_sb(
         try:
             copy(dot_source, dot_dest)
         except PermissionError as err:
-            files_with_permission_errors.add(
-                find_path_for_permission_error_reporting(err.filename)
-            )
+            files_with_permission_errors.add(find_path_for_permission_error_reporting(err.filename))
         except FileNotFoundError as err:
             print_red_bold(f"ERROR: {err}")
 
     if reinstallation_error_count != 0:
-        print_red_bold(f"\nSome errors which require manual resolution detected.")
+        print_red_bold("\nSome errors which require manual resolution detected.")
 
     num_permission_errors = len(files_with_permission_errors)
     if num_permission_errors != 0:
@@ -179,7 +179,7 @@ def reinstall_packages_sb(packages_path: str, dry_run: bool = False):
 
     print_blue_bold("Package Manager Backups Found:")
     for mgr in package_mgrs:
-        print_yellow("\t{}".format(mgr))
+        print_yellow(f"\t{mgr}")
     print()
 
     # TODO: Multithreading for reinstallation.
@@ -203,7 +203,7 @@ def reinstall_packages_sb(packages_path: str, dry_run: bool = False):
             run_cmd_if_no_dry_run(cmd, dry_run)
         elif pm == "vscode":
             print_pkg_mgr_reinstall(pm)
-            with open(f"{packages_path}/vscode_list.txt", "r") as file:
+            with open(f"{packages_path}/vscode_list.txt") as file:
                 for package in file:
                     cmd = f"code --install-extension {package}"
                     run_cmd_if_no_dry_run(cmd, dry_run)

@@ -1,7 +1,8 @@
 import sys
+
 from .config import get_config
-from .printing import print_red_bold, print_red
 from .constants import ProjInfo
+from .printing import print_red, print_red_bold
 
 
 def check_if_config_upgrade_needed():
@@ -13,9 +14,7 @@ def check_if_config_upgrade_needed():
             f"ERROR: Config version detected as incompatible with current shallow-backup version ({ProjInfo.VERSION})."
         )
         print_red("There are two possible fixes.")
-        print_red(
-            "1. Backup your config file to another location and remove the original config."
-        )
+        print_red("1. Backup your config file to another location and remove the original config.")
         print_red("\tshallow-backup will recreate a compatible config on the next run.")
         print_red("\tYou can then add in your custom backup paths manually.")
         print_red("2. Manually upgrade the config.")

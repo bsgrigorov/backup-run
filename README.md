@@ -11,37 +11,46 @@ Git-integrated macOS backup orchestrator. Fork of [shallow-backup](https://githu
 
 ## Install
 
+**Runtime (recommended):**
+
 ```bash
 pipx install -e ~/dev/repos/zzz/backup-run
-chmod +x ~/dev/repos/zzz/backup-run/bin/backup
+chmod +x ~/dev/repos/zzz/backup-run/backup
 ```
 
-Copy or symlink config:
+**Development:**
 
 ```bash
-cp manifest/backup-run.conf ~/.config/backup-run.conf
-# legacy shallow-backup.conf still works
+cd ~/dev/repos/zzz/backup-run
+uv sync
+uv run backup-run --version
 ```
 
 ## Usage
 
 ```bash
-backup          # alias → bin/backup
+backup          # alias → ~/dev/repos/zzz/backup-run/backup
 backup -s       # include sudo sfltool login-item dump (run sudo -v first)
 backup-run --backup-all --skip-git   # sync only (no git)
 ```
 
-`bin/backup` runs: sync → `scripts/backup_extras.sh` → one git commit/push in the data repo.
+`backup` runs: sync → `scripts/backup_extras.sh` → one git commit/push in the data repo.
 
 ## Config
 
-`~/.config/backup-run.conf` — JSON manifest: `backup_path`, `dotfiles`, `config_mapping`, gitignore rules.
-
-Canonical manifest copy: `manifest/backup-run.conf`.
+`manifest/backup-run.conf` — JSON manifest: `backup_path`, `dotfiles`, `config_mapping`, gitignore rules. Edit in the tool repo; no copy under `~/.config`.
 
 ## Extras (not in Python sync)
 
 `scripts/backup_extras.sh`: brew casks/taps/Brewfile, pnpm/mise/asdf/pipx/uv/fnm, Cursor extensions, macOS defaults plists, Chrome bookmarks HTML.
+
+## Dev
+
+```bash
+uv run ruff check .
+uv run ruff format .
+uv build
+```
 
 ## Weekly cron
 

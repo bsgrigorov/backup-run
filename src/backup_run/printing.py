@@ -1,6 +1,5 @@
 import os
 import sys
-from typing import List, Set, Union
 
 import inquirer
 from colorama import Fore, Style
@@ -56,9 +55,7 @@ def print_path_green(text, path):
     print(Fore.GREEN + Style.BRIGHT + text, Style.NORMAL + path + Style.RESET_ALL)
 
 
-def print_list_pretty(
-    items_to_print: Union[Set, List], style=Style.BRIGHT, color=Fore.RED
-):
+def print_list_pretty(items_to_print: set | list, style=Style.BRIGHT, color=Fore.RED):
     print(f"{style}{color}")
     for x in items_to_print:
         print(f" - {x}")
@@ -108,11 +105,9 @@ def print_version_info(cli=True):
     """
     Formats version differently for CLI and splash screen.
     """
-    version = "v{} by {} (@{})".format(
-        ProjInfo.VERSION, ProjInfo.AUTHOR_FULL_NAME, ProjInfo.AUTHOR_GITHUB
-    )
+    version = f"v{ProjInfo.VERSION} by {ProjInfo.AUTHOR_FULL_NAME} (@{ProjInfo.AUTHOR_GITHUB})"
     if not cli:
-        print(Fore.RED + Style.BRIGHT + "\t{}\n".format(version) + Style.RESET_ALL)
+        print(Fore.RED + Style.BRIGHT + f"\t{version}\n" + Style.RESET_ALL)
     else:
         print(version)
 
@@ -133,29 +128,13 @@ def print_section_header(title, color):
 
 def print_pkg_mgr_backup(mgr):
     print(
-        "{}Backing up {}{}{}{}{} packages list...{}".format(
-            Fore.BLUE,
-            Style.BRIGHT,
-            Fore.YELLOW,
-            mgr,
-            Fore.BLUE,
-            Style.NORMAL,
-            Style.RESET_ALL,
-        )
+        f"{Fore.BLUE}Backing up {Style.BRIGHT}{Fore.YELLOW}{mgr}{Fore.BLUE}{Style.NORMAL} packages list...{Style.RESET_ALL}"
     )
 
 
 def print_pkg_mgr_reinstall(mgr):
     print(
-        "{}Reinstalling {}{}{}{}{}...{}".format(
-            Fore.BLUE,
-            Style.BRIGHT,
-            Fore.YELLOW,
-            mgr,
-            Fore.BLUE,
-            Style.NORMAL,
-            Style.RESET_ALL,
-        )
+        f"{Fore.BLUE}Reinstalling {Style.BRIGHT}{Fore.YELLOW}{mgr}{Fore.BLUE}{Style.NORMAL}...{Style.RESET_ALL}"
     )
 
 
