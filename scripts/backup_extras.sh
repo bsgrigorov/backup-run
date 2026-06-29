@@ -5,19 +5,15 @@ set -euo pipefail
 
 PATH="/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin:${HOME}/.local/bin:${PATH:-}"
 
-BACKUP_ROOT="${BACKUP_ROOT:-$HOME/dev/repos/zzz/backup}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=_common.sh
+source "$SCRIPT_DIR/_common.sh"
+
+BACKUP_ROOT="$(resolve_backup_root)"
 PKG="$BACKUP_ROOT/packages"
 MACOS="$BACKUP_ROOT/configs/macos-system"
 CHROME="$BACKUP_ROOT/configs/chrome/bookmarks"
 CURSOR="$BACKUP_ROOT/configs/cursor"
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
-GREEN='\033[0;32m'
-BLUE='\033[0;34m'
-NC='\033[0m'
-
-log_ok() { echo -e "${GREEN}✓${NC} ${BLUE}$1${NC}"; }
-log_skip() { echo "⚠️  skip: $1"; }
 
 write_if_cmd() {
     local label=$1 cmd=$2 dest=$3
@@ -140,23 +136,7 @@ echo "🔄 backup_extras: Chrome bookmarks → HTML"
 CHROME_DIR="$HOME/Library/Application Support/Google/Chrome"
 LOCAL_STATE="$CHROME_DIR/Local State"
 profile_label() {
-    local dir=$1
-    python3 - "$LOCAL_STATE" "$dir" <<'PY'
-import json, re, sys
-from pathlib import Path
-
-local_state, profile_dir = sys.argv[1], sys.argv[2]
-name = profile_dir
-try:
-    data = json.loads(Path(local_state).read_text())
-    info = data.get("profile", {}).get("info_cache", {}).get(profile_dir, {})
-    if info.get("name"):
-        name = info["name"]
-except Exception:
-    pass
-slug = re.sub(r"[^A-Za-z0-9._-]+", "-", name).strip("-") or profile_dir
-print(f"{profile_dir}__{slug}")
-PY
+    run_tool_python -m backup_run.extras.chrome profile-label "$LOCAL_STATE" "$1"
 }
 
 if [[ -d "$CHROME_DIR" ]]; then
@@ -165,11 +145,20 @@ if [[ -d "$CHROME_DIR" ]]; then
         profile_dir="$(basename "$profile_path")"
         label="$(profile_label "$profile_dir")"
         out="$CHROME/${label}.html"
-        python3 "$SCRIPT_DIR/chrome_bookmarks_to_html.py" "$bookmarks" "$out"
+        run_tool_python -m backup_run.extras.chrome bookmarks "$bookmarks" "$out"
         log_ok "Chrome $profile_dir → $(basename "$out")"
     done < <(find "$CHROME_DIR" -maxdepth 2 -name Bookmarks -type f 2>/dev/null | sort)
 else
     log_skip "Chrome profile dir missing"
 fi
+
+echo "🔄 backup_extras: Chrome inventory (profiles, extensions, web apps)"
+"$SCRIPT_DIR/snapshot_chrome_inventory.sh"
+
+echo "🔄 backup_extras: dev layout (repo index, skeleton, workspaces)"
+"$SCRIPT_DIR/snapshot_dev_layout.sh"
+
+echo "🔄 backup_extras: Postman local config"
+"$SCRIPT_DIR/snapshot_postman.sh"
 
 echo "✅ backup_extras done → $BACKUP_ROOT"

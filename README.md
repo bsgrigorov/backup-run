@@ -6,8 +6,8 @@ Git-integrated macOS backup orchestrator. Fork of [shallow-backup](https://githu
 
 | Path | Role |
 |------|------|
-| `~/dev/repos/zzz/backup-run` | This repo — tool + manifest |
-| `~/dev/repos/zzz/backup` | Data repo — dotfiles, configs, packages (private git) |
+| `~/dev/repos/zzz/backup-run` | This repo — tool, manifest, shell extras |
+| `~/dev/repos/zzz/backup` | Data repo — dotfiles, configs, packages, `manual/` (private git) |
 
 ## Install
 
@@ -17,6 +17,8 @@ Git-integrated macOS backup orchestrator. Fork of [shallow-backup](https://githu
 pipx install -e ~/dev/repos/zzz/backup-run
 chmod +x ~/dev/repos/zzz/backup-run/backup
 ```
+
+After dependency changes: `pipx reinstall backup-run`.
 
 **Development:**
 
@@ -44,7 +46,11 @@ backup-run --backup-all --skip-git   # sync only (no git)
 
 ## Extras (not in Python sync)
 
-`scripts/backup_extras.sh`: brew casks/taps/Brewfile, pnpm/mise/asdf/pipx/uv/fnm, Cursor extensions, macOS defaults plists, Chrome bookmarks HTML.
+Shell orchestration under `scripts/`; Python helpers under `src/backup_run/extras/`. Runtime deps: `git`, Python 3.11+, **PyYAML** (via `uv sync` or `pipx install -e .`), and `manifest/backup-run.conf`.
+
+`scripts/backup_extras.sh`: brew manifests, Cursor extensions, macOS plists, Chrome bookmarks/inventory, dev layout, Postman prefs.
+
+Manual reference docs (`manual/apps.md`) live in the **backup data repo** only — edit there, not in backup-run.
 
 ## Dev
 

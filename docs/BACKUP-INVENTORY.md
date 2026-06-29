@@ -36,7 +36,7 @@ Data lands in `~/dev/repos/zzz/backup/` (`bsgrigorov/backup`, private GitHub). T
 | `~/.config/k9s/` | `dotfiles/.config/k9s/` | |
 | `~/.config/karabiner/karabiner.json` | `dotfiles/.config/karabiner/` | |
 | `~/.config/gh/config.yml` | `dotfiles/.config/gh/` | No tokens in file |
-| `~/.config/gcloud/configurations/` | `dotfiles/.config/gcloud/` | Account names only; re-auth on new Mac |
+| `~/.config/gcloud/configurations/` only | `dotfiles/.config/gcloud/configurations/` | **Non-secret** named configs (accounts, project defaults). **Not** `access_tokens.db`, `credentials.db`, ADC, or `legacy_credentials/` — re-auth on new Mac |
 | `~/.config/wireshark/`, `k3d/`, `htop/` | `dotfiles/.config/…` | |
 
 ### App settings (plist + Application Support)
@@ -70,7 +70,7 @@ Hooks, rules, skills → **`kb/agents`** (separate repo).
 | npm / VS Code extensions | `npm_list.txt`, `vscode_list.txt` |
 | gem, cargo, pip, pip3 | `gem_list.txt`, `cargo_list.txt`, `pip_list.txt`, `pip3_list.txt` |
 | pnpm, mise, asdf, pipx, uv, fnm | `pnpm_list.txt`, `mise_list.txt`, `asdf_current.txt`, `pipx_list.txt`, `uv_tools_list.txt`, `fnm_list.txt` |
-| Installed apps | `system_apps_list.txt` |
+| Installed apps | `system_apps_list.txt` (`ls /Applications`, Python sync) |
 
 ### macOS system snapshot (extras)
 
@@ -88,6 +88,43 @@ TCC permissions (Accessibility, Input Monitoring, etc.) are **manual** — not c
 | Source | Backup path |
 |--------|-------------|
 | Each Chrome profile `Bookmarks` → HTML | `configs/chrome/bookmarks/*.html` |
+
+### Chrome inventory (extras)
+
+Simple `ls` per profile on each `backup` run. Extension folder names are Chrome extension IDs; full state syncs when you sign in to the profile.
+
+| Source | Backup path |
+|--------|-------------|
+| Profile dirs (`Default`, `Profile *`) | `configs/chrome/inventory/profiles.txt` |
+| Per profile: `Extensions/`, `Web Applications/`, manifest resources | `configs/chrome/inventory/<profile>__<name>/*_ls.txt` |
+
+### Dev filesystem layout (extras)
+
+Programmatic snapshot on every `backup` run. Worktree checkouts are **excluded** from the repo index; only umbrella dirs (e.g. `worktrees/`, `sandbox/`) appear in the skeleton.
+
+| Source | Backup path |
+|--------|-------------|
+| Git walk under `~/dev/repos` — `repo`, `url` (https), `path` per checkout | `layouts/repos_map.yaml` |
+| `~/dev/` and `~/dev/repos/` folder tree (no git URLs) | `layouts/dev_layout.yaml` |
+| `~/dev/repos/*.code-workspace` | `configs/workspaces/` |
+
+Restore: recreate umbrella dirs from `dev_layout.yaml`, clone from `repos_map.yaml` (or future `bootstrap/repos.yaml`), open workspaces from `configs/workspaces/`.
+
+### Postman (local prefs)
+
+| Source | Backup path | Notes |
+|--------|-------------|-------|
+| `~/Library/Application Support/Postman/Postman_Config/` | `configs/postman/Postman_Config/` | User/partition prefs |
+| `Postman/storage/settings.json`, `userPartitionData.json` | `configs/postman/storage/` | |
+| Collections / environments | — | **Cloud-synced** — sign in to Postman on new Mac |
+
+### Manual reference (data repo)
+
+| Location | Purpose |
+|----------|---------|
+| `manual/apps.md` in **backup data repo** | Per-app reinstall notes — edit in `~/dev/repos/zzz/backup/manual/` |
+
+Not synced from backup-run; the data repo is the single source of truth.
 
 ---
 
