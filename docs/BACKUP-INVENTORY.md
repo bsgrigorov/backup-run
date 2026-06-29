@@ -4,7 +4,7 @@ Human-readable inventory for Bobby's Mac. Source of truth for paths: `manifest/b
 
 ```bash
 backup        # daily — no sudo-only steps
-backup -s     # weekly — includes sfltool login items (run sudo -v first)
+backup -s     # weekly — includes sfltool login items (sudo prompts if needed)
 ```
 
 Data lands in `~/dev/repos/zzz/backup/` (`bsgrigorov/backup`, private GitHub). The `./backup` script syncs, runs extras, then one commit+push.

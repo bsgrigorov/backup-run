@@ -30,7 +30,7 @@ uv run backup-run --version
 
 ```bash
 backup          # alias → ~/dev/repos/zzz/backup-run/backup
-backup -s       # include sudo sfltool login-item dump (run sudo -v first)
+backup -s       # include sudo sfltool login-item dump (prompts if needed)
 backup-run --backup-all --skip-git   # sync only (no git)
 ```
 

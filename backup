@@ -2,7 +2,7 @@
 # Unified backup entrypoint (sync + extras + one git commit/push).
 #
 # Usage: backup [-s]
-#   -s  sudo-only steps (sfltool login items). Requires cached sudo (sudo -v).
+#   -s  sudo-only steps (sfltool login items; prompts for password if needed).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -13,7 +13,7 @@ usage() {
 Usage: $(basename "$0") [-s] [-h]
 
   (no args)  sync dotfiles/configs/packages + extras; skip sudo-only steps
-  -s         include sudo-only steps (sfltool). Run sudo -v first.
+  -s         include sudo-only steps (sfltool; will prompt for password if needed)
   -h         this help
 
 Tool repo: $ROOT
