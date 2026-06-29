@@ -15,7 +15,7 @@ def path_update_prompt(config):
     If yes, update. If no... don't.
     """
     current_path = config["backup_path"]
-    print_path_blue("Current shallow-backup path:", current_path)
+    print_path_blue("Current backup path:", current_path)
     if prompt_yes_no(
         "Would you like to move this somewhere else?", Fore.GREEN, invert=True
     ):
@@ -26,7 +26,7 @@ def path_update_prompt(config):
             if not check_if_path_is_valid_dir(abs_path):
                 continue
 
-            print_path_blue("\nUpdating shallow-backup path to:", abs_path)
+            print_path_blue("\nUpdating backup path to:", abs_path)
             mkdir_warn_overwrite(abs_path)
             move_git_repo(current_path, abs_path)
             config["backup_path"] = abs_path

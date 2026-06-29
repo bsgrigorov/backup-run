@@ -124,7 +124,7 @@ def handle_separate_git_dir_in_dotfiles(dotfiles_path: Path, dry_run: bool = Fal
                     dotfiles_repo,
                     dry_run=dry_run,
                 )
-                print_green_bold("Switching back to parent shallow-backup repo...")
+                print_green_bold("Switching back to parent backup-run repo...")
         else:
             print_green_bold("Detected a nested dotfiles repo that is clean.")
     else:
@@ -225,7 +225,7 @@ def git_add_all_commit_push(repo: git.Repo, dry_run: bool = False):
             print_yellow_bold("Dry run: Would have made a commit!")
             return
         print_yellow_bold("Making new commit...")
-        process = subprocess.run(["git", "commit", "-m", "update"], cwd=repo.working_dir)
+        process = subprocess.run(["git", "commit", "-m", "backup: snapshot"], cwd=repo.working_dir)
         if process.returncode != 0:
             print_red_bold(
                 "Failed to make a commit. The two most likely reasons for this are:\n\t1. No commit message was provided.\n\t2. trufflehog detected secrets in the commit.\nPlease resolve ths issue and try again."

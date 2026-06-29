@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+# Unified backup entrypoint (sync + extras + one git commit/push).
+#
+# Usage: backup [-s]
+#   -s  sudo-only steps (sfltool login items). Requires cached sudo (sudo -v).
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+PATH="/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin:${HOME}/.local/bin:${PATH:-}"
+
+usage() {
+    cat <<EOF
+Usage: $(basename "$0") [-s] [-h]
+
+  (no args)  sync dotfiles/configs/packages + extras; skip sudo-only steps
+  -s         include sudo-only steps (sfltool). Run sudo -v first.
+  -h         this help
+
+Tool repo: $ROOT
+Data repo: \$BACKUP_ROOT (from ~/.config/backup-run.conf)
+EOF
+}
+
+BACKUP_SUDO=0
+while getopts "sh" opt; do
+    case "$opt" in
+        s) BACKUP_SUDO=1 ;;
+        h) usage; exit 0 ;;
+        *) usage >&2; exit 1 ;;
+    esac
+done
+
+export BACKUP_SUDO
+
+if ! command -v backup-run >/dev/null 2>&1; then
+    echo "backup: backup-run not found — pipx install -e $ROOT" >&2
+    exit 1
+fi
+
+BACKUP_ROOT="${BACKUP_ROOT:-$(
+    python3 -c 'from backup_run.config import get_config; print(get_config()["backup_path"])' 2>/dev/null \
+        || echo "$HOME/dev/repos/zzz/backup"
+)}"
+export BACKUP_ROOT
+
+echo "==> backup: sync (backup-run)"
+backup-run --backup-all --no-splash --no-new-backup-path-prompt --skip-git
+
+echo "==> backup: extras"
+"$ROOT/scripts/backup_extras.sh"
+
+if git -C "$BACKUP_ROOT" rev-parse --git-dir >/dev/null 2>&1; then
+    git -C "$BACKUP_ROOT" add -A
+    if ! git -C "$BACKUP_ROOT" diff --cached --quiet; then
+        echo "==> backup: commit"
+        git -C "$BACKUP_ROOT" commit -m "backup: snapshot"
+    fi
+    if git -C "$BACKUP_ROOT" rev-parse '@{u}' >/dev/null 2>&1; then
+        ahead="$(git -C "$BACKUP_ROOT" rev-list --count '@{u}..HEAD' 2>/dev/null || echo 0)"
+        if [[ "$ahead" != "0" ]]; then
+            echo "==> backup: push"
+            git -C "$BACKUP_ROOT" push
+        fi
+    fi
+fi
+
+echo "==> backup: done → $BACKUP_ROOT"

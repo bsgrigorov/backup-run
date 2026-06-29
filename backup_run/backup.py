@@ -4,7 +4,8 @@ from shlex import quote
 from colorama import Fore
 import multiprocessing as mp
 from pathlib import Path
-from shutil import copyfile
+from shutil import copyfile, copytree
+import shutil
 from .utils import *
 from .printing import *
 from .compatibility import *
@@ -121,9 +122,8 @@ def backup_configs(backup_path, dry_run: bool = False, skip=False):
     path relative to the configs/ directory.
     """
     print_section_header("CONFIGS", Fore.BLUE)
-    # Don't clear any directories if this is a dry run
     if not dry_run:
-        overwrite_dir_prompt_if_needed(backup_path, skip)
+        safe_mkdir(backup_path)
     config = get_config()
 
     print_blue_bold("Backing up configs...")
@@ -136,13 +136,12 @@ def backup_configs(backup_path, dry_run: bool = False, skip=False):
             print_dry_run_copy_info(config_path, dest)
             continue
 
-        quoted_dest = quote(dest)
         if os.path.isdir(config_path):
-            copytree(config_path, quoted_dest, symlinks=True)
+            copytree(config_path, dest, symlinks=True, dirs_exist_ok=True)
         elif os.path.isfile(config_path):
             parent_dir = Path(dest).parent
             safe_mkdir(parent_dir)
-            copyfile(config_path, quoted_dest)
+            copyfile(config_path, dest)
 
 
 def backup_packages(backup_path, dry_run: bool = False, skip=False):
@@ -160,7 +159,7 @@ def backup_packages(backup_path, dry_run: bool = False, skip=False):
 
     print_section_header("PACKAGES", Fore.BLUE)
     if not dry_run:
-        overwrite_dir_prompt_if_needed(backup_path, skip)
+        safe_mkdir(backup_path)
 
     # brew
     print_pkg_mgr_backup("brew")
@@ -219,11 +218,12 @@ def backup_packages(backup_path, dry_run: bool = False, skip=False):
     dest = f"{backup_path}/vscode_list.txt"
     run_cmd_if_no_dry_run(command, dest, dry_run)
 
-    # macports
-    print_pkg_mgr_backup("macports")
-    command = "port installed requested"
-    dest = f"{backup_path}/macports_list.txt"
-    run_cmd_if_no_dry_run(command, dest, dry_run)
+    # macports (skip if not installed)
+    if shutil.which("port"):
+        print_pkg_mgr_backup("macports")
+        command = "port installed requested"
+        dest = f"{backup_path}/macports_list.txt"
+        run_cmd_if_no_dry_run(command, dest, dry_run)
 
     # system installs
     print_pkg_mgr_backup("System Applications")
@@ -261,10 +261,9 @@ def backup_fonts(backup_path: str, dry_run: bool = False, skip: bool = False):
 def backup_all(
     dotfiles_path, packages_path, fonts_path, configs_path, dry_run=False, skip=False
 ):
-    """Complete backup procedure."""
+    """Complete backup procedure (fonts skipped — not used on this machine)."""
     backup_dotfiles(dotfiles_path, dry_run=dry_run, skip=skip)
     backup_packages(packages_path, dry_run=dry_run, skip=skip)
-    backup_fonts(fonts_path, dry_run=dry_run, skip=skip)
     backup_configs(configs_path, dry_run=dry_run, skip=skip)
 
 

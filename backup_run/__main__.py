@@ -132,6 +132,12 @@ from .utils import (
     "--edit", is_flag=True, default=False, help="Open config file in $EDITOR."
 )
 @click.option(
+    "--skip-git",
+    is_flag=True,
+    default=False,
+    help="Sync only; do not commit or push (used by bin/backup).",
+)
+@click.option(
     "--version",
     "-v",
     is_flag=True,
@@ -159,13 +165,11 @@ def cli(
     remote,
     edit,
     version,
+    skip_git,
 ):
     """
-    \b
-    Easily back up installed packages, dotfiles, and more.
-    You can edit which files are backed up in ~/.shallow-backup.
-
-    Written by Aaron Lichtman (@alichtman).
+    Easily back up installed packages, dotfiles, and app configs to a git repo.
+    Config: ~/.config/backup-run.conf (legacy: shallow-backup.conf).
     """
     safe_create_config()
     check_if_config_upgrade_needed()
@@ -176,6 +180,7 @@ def cli(
     has_cli_arg = any(
         [
             no_new_backup_path_prompt,
+            skip_git,
             backup_all_flag,
             backup_dots_flag,
             backup_packages_flag,
@@ -231,7 +236,7 @@ def cli(
         if not check_if_path_is_valid_dir(abs_path):
             sys.exit(1)
 
-        print_path_blue("\nUpdating shallow-backup path to:", abs_path)
+        print_path_blue("\nUpdating backup path to:", abs_path)
         backup_config["backup_path"] = abs_path
         write_config(backup_config)
 
@@ -283,7 +288,8 @@ def cli(
                 dry_run=dry_run,
                 skip=True,
             )
-            git_add_all_commit_push(repo, dry_run=dry_run)
+            if not skip_git:
+                git_add_all_commit_push(repo, dry_run=dry_run)
         elif backup_dots_flag:
             backup_dotfiles(dotfiles_path, dry_run=dry_run, skip=True)
             # The reason that dotfiles/.git is special cased, and none of the others are is because maintaining a separate git repo for dotfiles is a common use case.

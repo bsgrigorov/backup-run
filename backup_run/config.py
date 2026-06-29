@@ -11,8 +11,13 @@ from functools import lru_cache
 
 
 def get_xdg_config_path() -> str:
-    """Returns path to $SHALLOW_BACKUP_CONFIG_DIR (if set), $XDG_CONFIG_HOME, or ~/.config if none of those exist."""
-    return environ.get("SHALLOW_BACKUP_CONFIG_DIR") or environ.get("XDG_CONFIG_HOME") or path.join(path.expanduser("~"), ".config")
+    """Returns BACKUP_RUN_CONFIG_DIR, XDG_CONFIG_HOME, or ~/.config."""
+    return (
+        environ.get("BACKUP_RUN_CONFIG_DIR")
+        or environ.get("SHALLOW_BACKUP_CONFIG_DIR")
+        or environ.get("XDG_CONFIG_HOME")
+        or path.join(path.expanduser("~"), ".config")
+    )
 
 
 @lru_cache(maxsize=1)
@@ -21,15 +26,19 @@ def get_config_path() -> str:
     Detects if in testing or prod env, and returns the right config path.
     :return: Path to config.
     """
-    test_config_path = environ.get("SHALLOW_BACKUP_TEST_CONFIG_PATH", None)
-    legacy_config_path = path.join(get_xdg_config_path(), "shallow-backup.conf")
-    new_config_path = path.join(get_xdg_config_path(), "shallow-backup.json")
+    test_config_path = environ.get("BACKUP_RUN_TEST_CONFIG_PATH", None)
+    config_dir = get_xdg_config_path()
+    primary_config_path = path.join(config_dir, "backup-run.conf")
+    legacy_config_path = path.join(config_dir, "shallow-backup.conf")
+    legacy_json_path = path.join(config_dir, "shallow-backup.json")
     if test_config_path:
         return test_config_path
+    elif path.exists(primary_config_path):
+        return primary_config_path
     elif path.exists(legacy_config_path):
         return legacy_config_path
     else:
-        return new_config_path
+        return legacy_json_path
 
 
 def get_config() -> dict:
