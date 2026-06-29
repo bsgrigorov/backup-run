@@ -40,6 +40,8 @@ backup-run --backup-all --skip-git   # sync only (no git)
 
 `manifest/backup-run.conf` — JSON manifest: `backup_path`, `dotfiles`, `config_mapping`, gitignore rules. Edit in the tool repo; no copy under `~/.config`.
 
+**Inventory:** [docs/BACKUP-INVENTORY.md](docs/BACKUP-INVENTORY.md) — human-readable list of what is backed up, excluded, and manual.
+
 ## Extras (not in Python sync)
 
 `scripts/backup_extras.sh`: brew casks/taps/Brewfile, pnpm/mise/asdf/pipx/uv/fnm, Cursor extensions, macOS defaults plists, Chrome bookmarks HTML.

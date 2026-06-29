@@ -198,11 +198,24 @@ def get_abs_path_subfiles(directory: str) -> list:
 
 
 def copyfile_with_exception_handler(src, dst):
+    if not os.path.exists(src):
+        return
+    if os.path.isdir(src):
+        return
     try:
+        safe_mkdir(os.path.dirname(dst))
         copyfile(src, dst)
     except Exception:
         print_path_red("Error copying:", src)
         print_red(" -> This may mean you have an error in your config.")
+
+
+def _ignore_ssh_runtime(_directory: str, names: list[str]) -> set[str]:
+    """Skip ssh-agent sockets and other runtime paths under ~/.ssh."""
+    ignored = set()
+    if os.path.basename(_directory) == ".ssh" and "agent" in names:
+        ignored.add("agent")
+    return ignored
 
 
 def copy_dir_if_valid(source_dir, backup_path):
@@ -213,10 +226,20 @@ def copy_dir_if_valid(source_dir, backup_path):
     invalid = {".Trash", ".npm", ".cache", ".rvm"}
     if invalid.intersection(set(os.path.split(source_dir))) != set():
         return
+    if not os.path.isdir(source_dir):
+        return
     try:
-        copytree(source_dir, backup_path, symlinks=False)
-    except shutil.Error:
+        copytree(
+            source_dir,
+            backup_path,
+            symlinks=True,
+            dirs_exist_ok=True,
+            ignore=_ignore_ssh_runtime,
+            ignore_dangling_symlinks=True,
+        )
+    except (OSError, shutil.Error) as exc:
         print_path_red("Error copying:", source_dir)
+        print_red(f" -> {exc}")
 
 
 def home_prefix(path):

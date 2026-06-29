@@ -123,7 +123,7 @@ fi
 
 if [[ "${BACKUP_SUDO:-0}" == "1" ]]; then
     if command -v sfltool >/dev/null 2>&1; then
-        if sudo -n sfltool dumpbtm >"$MACOS/login-items-sfltool.txt" 2>/dev/null; then
+        if sudo sfltool dumpbtm >"$MACOS/login-items-sfltool.txt" 2>/dev/null; then
             log_ok "login items (sudo sfltool dumpbtm)"
         else
             log_skip "sfltool (sudo failed — run: sudo -v, then backup -s; keeping existing file if any)"
