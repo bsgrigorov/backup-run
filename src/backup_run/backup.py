@@ -155,8 +155,21 @@ def backup_packages(backup_path, dry_run: bool = False, skip=False):
     if not dry_run:
         safe_mkdir(backup_path)
 
-    # brew: owned by scripts/backup_extras.sh → packages/Brewfile
-    # (Python used to dump brew_list.txt without --force; file went stale once it existed.)
+    # brew — Brewfile is the restore source; cask/tap lists are quick diffs
+    print_pkg_mgr_backup("brew")
+    brewfile = f"{backup_path}/Brewfile"
+    if dry_run:
+        print_dry_run_copy_info("$ brew bundle dump --force --file …/Brewfile", brewfile)
+    else:
+        brew_list = f"{backup_path}/brew_list.txt"
+        if Path(brew_list).exists():
+            Path(brew_list).unlink()
+        result = run_cmd(f"brew bundle dump --force --file {quote(brewfile)}")
+        if result is None or result.returncode != 0:
+            print_yellow("brew package manager not found or brew bundle dump failed.")
+        else:
+            run_cmd_if_no_dry_run("brew list --cask", f"{backup_path}/brew_cask_list.txt", dry_run)
+            run_cmd_if_no_dry_run("brew tap", f"{backup_path}/brew_tap_list.txt", dry_run)
 
     # ruby
     print_pkg_mgr_backup("gem")

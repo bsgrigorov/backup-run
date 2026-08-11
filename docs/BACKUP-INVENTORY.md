@@ -68,7 +68,7 @@ Hooks, rules, skills → **`kb/agents`** (separate repo).
 
 | Tool | File(s) in `packages/` |
 |------|-------------------------|
-| Homebrew | `Brewfile` (canonical, extras `--force --describe`), plus `brew_cask_list.txt` / `brew_tap_list.txt` for quick diffs |
+| Homebrew | `Brewfile` (canonical, Python sync `--force`), plus `brew_cask_list.txt` / `brew_tap_list.txt` for quick diffs |
 | npm / VS Code extensions | `npm_list.txt`, `vscode_list.txt` |
 | gem, cargo, pip, pip3 | `gem_list.txt`, `cargo_list.txt`, `pip_list.txt`, `pip3_list.txt` |
 | pnpm, mise, asdf, pipx, uv, fnm | `pnpm_list.txt`, `mise_list.txt`, `asdf_current.txt`, `pipx_list.txt`, `uv_tools_list.txt`, `fnm_list.txt` |

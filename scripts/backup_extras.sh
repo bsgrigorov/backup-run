@@ -46,20 +46,6 @@ copy_if_file() {
 mkdir -p "$PKG" "$MACOS" "$CHROME" "$CURSOR/cli"
 
 echo "🔄 backup_extras: package manifests"
-# Canonical brew inventory is Brewfile (--force so it refreshes every run).
-# brew_cask_list / brew_tap_list are quick-diff companions, not restore sources.
-if command -v brew >/dev/null 2>&1; then
-    brew list --cask >"$PKG/brew_cask_list.txt"
-    log_ok "brew casks → brew_cask_list.txt"
-    brew tap >"$PKG/brew_tap_list.txt"
-    log_ok "brew taps → brew_tap_list.txt"
-    brew bundle dump --force --describe --file="$PKG/Brewfile"
-    log_ok "brew bundle → Brewfile"
-    rm -f "$PKG/brew_list.txt"
-else
-    log_skip "brew manifests"
-fi
-
 write_if_cmd "pnpm globals" "pnpm list -g --depth 0" "$PKG/pnpm_list.txt"
 write_if_cmd "mise tools" "mise ls" "$PKG/mise_list.txt"
 write_if_cmd "asdf versions" "asdf current 2>&1; asdf list 2>&1" "$PKG/asdf_current.txt"
