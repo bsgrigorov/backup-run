@@ -164,6 +164,9 @@ def reinstall_packages_sb(packages_path: str, dry_run: bool = False):
     # Figure out which install lists they have saved
     package_mgrs = set()
     for file in os.listdir(packages_path):
+        if file == "Brewfile":
+            package_mgrs.add("brew")
+            continue
         manager = file.split("_")[0].replace("-", " ")
         if manager in [
             "gem",
@@ -187,7 +190,8 @@ def reinstall_packages_sb(packages_path: str, dry_run: bool = False):
     for pm in package_mgrs:
         if pm == "brew":
             print_pkg_mgr_reinstall(pm)
-            cmd = f"brew bundle install --no-lock --file {packages_path}/brew_list.txt"
+            brewfile = f"{packages_path}/Brewfile"
+            cmd = f"brew bundle install --no-lock --file {brewfile}"
             run_cmd_if_no_dry_run(cmd, dry_run)
         elif pm == "npm":
             print_pkg_mgr_reinstall(pm)

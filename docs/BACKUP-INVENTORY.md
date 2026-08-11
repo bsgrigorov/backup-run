@@ -38,6 +38,7 @@ Data lands in `~/dev/repos/zzz/backup/` (`bsgrigorov/backup`, private GitHub). T
 | `~/.config/gh/config.yml` | `dotfiles/.config/gh/` | No tokens in file |
 | `~/.config/gcloud/configurations/` only | `dotfiles/.config/gcloud/configurations/` | **Non-secret** named configs (accounts, project defaults). **Not** `access_tokens.db`, `credentials.db`, ADC, or `legacy_credentials/` — re-auth on new Mac |
 | `~/.config/wireshark/`, `k3d/`, `htop/` | `dotfiles/.config/…` | |
+| `~/.config/ghostty/config` | `dotfiles/.config/ghostty/` | Keybinds/UI only — safe to commit. Do not back up scrollback/caches. |
 
 ### App settings (plist + Application Support)
 
@@ -51,6 +52,7 @@ Data lands in `~/dev/repos/zzz/backup/` (`bsgrigorov/backup`, private GitHub). T
 | BetterTouchTool — plist + app support | `configs/bettertouchtool/` |
 | Raycast | `configs/raycast/` |
 | Stats | `configs/stats/` |
+| BetterDisplay | `configs/betterdisplay/` |
 | LaunchAgents | `configs/launchagents/` |
 
 ### Cursor extras (shell script)
@@ -66,7 +68,7 @@ Hooks, rules, skills → **`kb/agents`** (separate repo).
 
 | Tool | File(s) in `packages/` |
 |------|-------------------------|
-| Homebrew | `brew_list.txt`, `brew_cask_list.txt`, `brew_tap_list.txt`, `Brewfile` |
+| Homebrew | `Brewfile` (canonical, extras `--force --describe`), plus `brew_cask_list.txt` / `brew_tap_list.txt` for quick diffs |
 | npm / VS Code extensions | `npm_list.txt`, `vscode_list.txt` |
 | gem, cargo, pip, pip3 | `gem_list.txt`, `cargo_list.txt`, `pip_list.txt`, `pip3_list.txt` |
 | pnpm, mise, asdf, pipx, uv, fnm | `pnpm_list.txt`, `mise_list.txt`, `asdf_current.txt`, `pipx_list.txt`, `uv_tools_list.txt`, `fnm_list.txt` |
