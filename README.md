@@ -48,7 +48,7 @@ backup-run --backup-all --skip-git   # sync only (no git)
 
 Shell orchestration under `scripts/`; Python helpers under `src/backup_run/extras/`. Runtime deps: `git`, Python 3.11+, **PyYAML** (via `uv sync` or `pipx install -e .`), and `manifest/backup-run.conf`.
 
-`scripts/backup_extras.sh`: pnpm/mise/pipx/uv/fnm lists, Cursor extensions, macOS plists, Chrome bookmarks/inventory, dev layout, Postman prefs. Homebrew `Brewfile` is written by the Python sync.
+`scripts/backup_extras.sh`: pnpm/mise/pipx/uv/fnm lists, Cursor + VS Code extension lists, macOS plists, Chrome bookmarks/inventory, dev layout, Postman prefs. Homebrew `Brewfile` is written by the Python sync (`--no-vscode`).
 
 Manual reference docs (`manual/apps.md`) live in the **backup data repo** only — edit there, not in backup-run.
 

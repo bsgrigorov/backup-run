@@ -31,7 +31,6 @@ mkdir -p "$INV"
 
 {
     echo "# Chrome profiles under: $CHROME_DIR"
-    echo "# generated: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
     echo
     for entry in "$CHROME_DIR"/*; do
         [[ -d "$entry" ]] || continue

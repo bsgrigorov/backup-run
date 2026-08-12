@@ -105,6 +105,54 @@ def safe_mkdir(directory):
     os.makedirs(directory, exist_ok=True)
 
 
+def dir_byte_size(path: str | Path, follow_symlinks: bool = False) -> int:
+    """Total size of files under path. Used to refuse huge accidental copies."""
+    root = Path(path)
+    if not root.exists():
+        return 0
+    if root.is_file():
+        return root.stat().st_size
+    total = 0
+    for dirpath, _dirnames, filenames in os.walk(root, followlinks=follow_symlinks):
+        for name in filenames:
+            fp = Path(dirpath) / name
+            try:
+                if fp.is_symlink() and not follow_symlinks:
+                    continue
+                total += fp.stat().st_size
+            except OSError:
+                continue
+    return total
+
+
+def max_copy_dir_bytes(config: dict | None = None) -> int:
+    """Default 50 MiB; override with manifest max_copy_dir_mb."""
+    mb = 50.0
+    if config is not None:
+        raw = config.get("max_copy_dir_mb")
+        if isinstance(raw, (int, float)) and raw > 0:
+            mb = float(raw)
+    return int(mb * 1024 * 1024)
+
+
+def refuse_oversized_dir(source_dir: str, limit_bytes: int, label: str = "") -> bool:
+    """Return True if source_dir should be skipped because it exceeds limit_bytes."""
+    try:
+        size = dir_byte_size(source_dir)
+    except OSError as exc:
+        print_path_red("Error sizing:", source_dir)
+        print_red(f" -> {exc}")
+        return True
+    if size <= limit_bytes:
+        return False
+    mb = size / (1024 * 1024)
+    lim = limit_bytes / (1024 * 1024)
+    what = label or source_dir
+    print_path_red("Skipping oversized dir:", what)
+    print_red(f" -> {mb:.1f} MiB > limit {lim:.0f} MiB (manifest max_copy_dir_mb)")
+    return True
+
+
 def mkdir_overwrite(path):
     """
     Makes a new directory, destroying the contents of the dir at path, if it exits.
@@ -218,15 +266,19 @@ def _ignore_ssh_runtime(_directory: str, names: list[str]) -> set[str]:
     return ignored
 
 
-def copy_dir_if_valid(source_dir, backup_path):
+def copy_dir_if_valid(source_dir, backup_path, max_bytes: int | None = None):
     """
     Copy dir from source_dir to backup_path. Skips copying if any of the
     'invalid' directories appear anywhere in the source_dir path.
+    Refuses dirs larger than max_bytes (default: max_copy_dir_bytes()).
     """
     invalid = {".Trash", ".npm", ".cache", ".rvm"}
     if invalid.intersection(set(os.path.split(source_dir))) != set():
         return
     if not os.path.isdir(source_dir):
+        return
+    limit = max_copy_dir_bytes() if max_bytes is None else max_bytes
+    if refuse_oversized_dir(source_dir, limit):
         return
     try:
         copytree(

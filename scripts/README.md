@@ -4,7 +4,7 @@ Shell wrappers for extras not covered by `backup-run` sync. Python logic lives i
 
 | Script | Purpose |
 |--------|---------|
-| `backup_extras.sh` | Orchestrator: pnpm/mise/etc lists, macOS plists, Cursor extras, Chrome, dev layout, Postman |
+| `backup_extras.sh` | Orchestrator: pnpm/mise/etc lists, Cursor + VS Code extensions, macOS plists, Chrome, dev layout, Postman |
 | `snapshot_chrome_inventory.sh` | Chrome profiles + per-profile `ls` of Extensions and Web Applications |
 | `snapshot_dev_layout.sh` | Repo map + dev layout YAML + workspace files |
 | `snapshot_postman.sh` | Postman local config |

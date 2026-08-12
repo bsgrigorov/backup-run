@@ -14,6 +14,7 @@ PKG="$BACKUP_ROOT/packages"
 MACOS="$BACKUP_ROOT/configs/macos-system"
 CHROME="$BACKUP_ROOT/configs/chrome/bookmarks"
 CURSOR="$BACKUP_ROOT/configs/cursor"
+VSCODE="$BACKUP_ROOT/configs/vscode"
 
 write_if_cmd() {
     local label=$1 cmd=$2 dest=$3
@@ -43,7 +44,7 @@ copy_if_file() {
     fi
 }
 
-mkdir -p "$PKG" "$MACOS" "$CHROME" "$CURSOR/cli"
+mkdir -p "$PKG" "$MACOS" "$CHROME" "$CURSOR/cli" "$VSCODE"
 
 echo "🔄 backup_extras: package manifests"
 write_if_cmd "pnpm globals" "pnpm list -g --depth 0" "$PKG/pnpm_list.txt"
@@ -53,7 +54,7 @@ write_if_cmd "pipx apps" "pipx list --short" "$PKG/pipx_list.txt"
 write_if_cmd "uv tools" "uv tool list" "$PKG/uv_tools_list.txt"
 write_if_cmd "fnm node versions" "fnm list" "$PKG/fnm_list.txt"
 
-echo "🔄 backup_extras: Cursor (canonical: configs/cursor/)"
+echo "🔄 backup_extras: Cursor + VS Code extensions"
 if command -v cursor >/dev/null 2>&1; then
     cursor --list-extensions --show-versions >"$CURSOR/extensions.list" 2>/dev/null || true
     if [[ -s "$CURSOR/extensions.list" ]]; then
@@ -67,6 +68,27 @@ else
 fi
 copy_if_file "$HOME/.cursor/argv.json" "$CURSOR/cli/argv.json" "cursor argv.json"
 copy_if_file "$HOME/.cursor/sandbox.json" "$CURSOR/cli/sandbox.json" "cursor sandbox.json"
+
+# Prefer the VS Code.app binary — interactive shells alias `code` → cursor.
+VSCODE_BIN="/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code"
+if [[ ! -x "$VSCODE_BIN" ]]; then
+    VSCODE_BIN="$(command -v code 2>/dev/null || true)"
+    case "$VSCODE_BIN" in
+        *cursor*) VSCODE_BIN="" ;;
+    esac
+fi
+if [[ -n "$VSCODE_BIN" && -x "$VSCODE_BIN" ]]; then
+    "$VSCODE_BIN" --list-extensions --show-versions >"$VSCODE/extensions.list" 2>/dev/null || true
+    if [[ -s "$VSCODE/extensions.list" ]]; then
+        log_ok "vscode extensions.list (via $VSCODE_BIN)"
+    else
+        rm -f "$VSCODE/extensions.list"
+        log_skip "vscode extensions.list"
+    fi
+    rm -f "$PKG/vscode_list.txt"
+else
+    log_skip "vscode CLI (code aliased to cursor or missing; set VS Code.app path)"
+fi
 
 echo "🔄 backup_extras: macOS system settings"
 MACOS_DOMAINS=(

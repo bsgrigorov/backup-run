@@ -84,12 +84,14 @@ def backup_dotfiles(backup_dest_path, dry_run=False, home_path=os.path.expanduse
 
     with mp.Pool(mp.cpu_count()):
         print_blue_bold("Backing up dotfolders...")
+        size_limit = max_copy_dir_bytes(get_config())
         for x in dotfolders_mp_in:
             p = mp.Process(
                 target=copy_dir_if_valid,
                 args=(
                     x[0],
                     x[1],
+                    size_limit,
                 ),
             )
             p.start()
@@ -122,6 +124,10 @@ def backup_configs(backup_path, dry_run: bool = False, skip=False):
 
     print_blue_bold("Backing up configs...")
 
+    # config_mapping is an allowlist. Still refuse oversized dirs so a mistaken
+    # Application Support path cannot dump multi-GB caches into the data repo.
+    size_limit = max_copy_dir_bytes(config)
+
     # backup config files + dirs in backup_path/<target>/
     for config_path, target in config["config_mapping"].items():
         dest = os.path.join(backup_path, target)
@@ -131,6 +137,8 @@ def backup_configs(backup_path, dry_run: bool = False, skip=False):
             continue
 
         if os.path.isdir(config_path):
+            if refuse_oversized_dir(config_path, size_limit, label=target):
+                continue
             copytree(config_path, dest, symlinks=True, dirs_exist_ok=True)
         elif os.path.isfile(config_path):
             parent_dir = Path(dest).parent
@@ -164,7 +172,7 @@ def backup_packages(backup_path, dry_run: bool = False, skip=False):
         brew_list = f"{backup_path}/brew_list.txt"
         if Path(brew_list).exists():
             Path(brew_list).unlink()
-        result = run_cmd(f"brew bundle dump --force --file {quote(brewfile)}")
+        result = run_cmd(f"brew bundle dump --force --no-vscode --file {quote(brewfile)}")
         if result is None or result.returncode != 0:
             print_yellow("brew package manager not found or brew bundle dump failed.")
         else:
@@ -210,11 +218,7 @@ def backup_packages(backup_path, dry_run: bool = False, skip=False):
                     [dest.write(f"{package}\n") for package in npm_packages]
         os.remove(temp_file_path)
 
-    # vscode extensions
-    print_pkg_mgr_backup("VSCode")
-    command = "code --list-extensions --show-versions"
-    dest = f"{backup_path}/vscode_list.txt"
-    run_cmd_if_no_dry_run(command, dest, dry_run)
+    # vscode extensions → configs/vscode/extensions.list (via backup_extras.sh)
 
     # macports (skip if not installed)
     if shutil.which("port"):

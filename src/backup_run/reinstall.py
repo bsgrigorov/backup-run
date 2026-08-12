@@ -163,6 +163,8 @@ def reinstall_packages_sb(packages_path: str, dry_run: bool = False):
 
     # Figure out which install lists they have saved
     package_mgrs = set()
+    backup_root = Path(packages_path).resolve().parent
+    vscode_ext = backup_root / "configs" / "vscode" / "extensions.list"
     for file in os.listdir(packages_path):
         if file == "Brewfile":
             package_mgrs.add("brew")
@@ -175,10 +177,11 @@ def reinstall_packages_sb(packages_path: str, dry_run: bool = False):
             "pip",
             "pip3",
             "brew",
-            "vscode",
             "macports",
         ]:
             package_mgrs.add(file.split("_")[0])
+    if vscode_ext.is_file():
+        package_mgrs.add("vscode")
 
     print_blue_bold("Package Manager Backups Found:")
     for mgr in package_mgrs:
@@ -207,9 +210,9 @@ def reinstall_packages_sb(packages_path: str, dry_run: bool = False):
             run_cmd_if_no_dry_run(cmd, dry_run)
         elif pm == "vscode":
             print_pkg_mgr_reinstall(pm)
-            with open(f"{packages_path}/vscode_list.txt") as file:
+            with open(vscode_ext) as file:
                 for package in file:
-                    cmd = f"code --install-extension {package}"
+                    cmd = f"code --install-extension {package.strip()}"
                     run_cmd_if_no_dry_run(cmd, dry_run)
         elif pm == "macports":
             print_red_bold("WARNING: Macports reinstallation is not supported.")

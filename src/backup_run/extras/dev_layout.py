@@ -5,7 +5,6 @@ from __future__ import annotations
 import re
 import subprocess
 import sys
-from datetime import UTC, datetime
 from pathlib import Path
 
 import yaml
@@ -94,10 +93,6 @@ def _origin_to_https(url: str) -> str:
     return raw.removesuffix(".git")
 
 
-def _utc_now() -> str:
-    return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
-
-
 def _write_yaml(path: Path, data: dict) -> None:
     path.write_text(yaml.safe_dump(data, **YAML_DUMP_KWARGS))
 
@@ -148,7 +143,6 @@ def build_repos_map(repos_root: Path, out_path: Path) -> None:
     _write_yaml(
         out_path,
         {
-            "generated_at": _utc_now(),
             "source": INDEX_SOURCE,
             "repos_root": str(repos_root),
             "worktree_rule": "exclude paths with segment worktrees or *.worktrees",
@@ -192,7 +186,6 @@ def build_layout(dev_root: Path, repos_root: Path, out_path: Path) -> None:
     _write_yaml(
         out_path,
         {
-            "generated_at": _utc_now(),
             "dev_root": str(dev_root),
             "repos_root": str(repos_root),
             "dev_top_level": _top_level(dev_root),

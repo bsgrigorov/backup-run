@@ -9,6 +9,8 @@ backup -s     # weekly — includes sfltool login items (sudo prompts if needed)
 
 Data lands in `~/dev/repos/zzz/backup/` (`bsgrigorov/backup`, private GitHub). The `./backup` script syncs, runs extras, then one commit+push.
 
+`config_mapping` and `dotfiles` are **allowlists**. Directory copies are also capped by `max_copy_dir_mb` (default 50) so a mistaken large path cannot dump caches into the repo.
+
 ---
 
 ## Committed to git (safe to push)
@@ -44,8 +46,8 @@ Data lands in `~/dev/repos/zzz/backup/` (`bsgrigorov/backup`, private GitHub). T
 
 | App | Backup path |
 |-----|-------------|
-| Cursor — settings, keybindings, snippets | `configs/cursor/` |
-| VS Code — settings, keybindings, snippets | `configs/vscode/` |
+| Cursor — settings, keybindings, snippets, extensions.list | `configs/cursor/` |
+| VS Code — settings, keybindings, snippets, extensions.list | `configs/vscode/` |
 | iTerm2 — plist + Application Support | `configs/iterm2/` |
 | Terminal.app | `configs/terminal_plist` |
 | Alfred (both plists) | `configs/alfred/` |
@@ -57,10 +59,12 @@ Data lands in `~/dev/repos/zzz/backup/` (`bsgrigorov/backup`, private GitHub). T
 
 ### Cursor extras (shell script)
 
-| Source | Backup path |
-|--------|-------------|
-| `cursor --list-extensions --show-versions` | `configs/cursor/extensions.list` |
-| `~/.cursor/argv.json`, `sandbox.json` | `configs/cursor/cli/` |
+| Source | Backup path | Notes |
+|--------|-------------|-------|
+| `cursor --list-extensions --show-versions` | `configs/cursor/extensions.list` | |
+| `code` (VS Code.app binary, not shell `code`→cursor alias) | `configs/vscode/extensions.list` | Not in Brewfile (`--no-vscode`) |
+| `~/.cursor/mcp.json` | `dotfiles/.cursor/` | Committed. Currently gcloud MCP only (no tokens). Re-check if you add API keys. |
+| `~/.cursor/argv.json`, `sandbox.json` | `configs/cursor/cli/` + `dotfiles/.cursor/` | Duplicated paths — fine for now |
 
 Hooks, rules, skills → **`kb/agents`** (separate repo).
 
@@ -68,8 +72,8 @@ Hooks, rules, skills → **`kb/agents`** (separate repo).
 
 | Tool | File(s) in `packages/` |
 |------|-------------------------|
-| Homebrew | `Brewfile` (canonical, Python sync `--force`), plus `brew_cask_list.txt` / `brew_tap_list.txt` for quick diffs |
-| npm / VS Code extensions | `npm_list.txt`, `vscode_list.txt` |
+| Homebrew | `Brewfile` (canonical, `--force --no-vscode`), plus `brew_cask_list.txt` / `brew_tap_list.txt` for quick diffs |
+| npm | `npm_list.txt` |
 | gem, cargo, pip, pip3 | `gem_list.txt`, `cargo_list.txt`, `pip_list.txt`, `pip3_list.txt` |
 | pnpm, mise, asdf, pipx, uv, fnm | `pnpm_list.txt`, `mise_list.txt`, `asdf_current.txt`, `pipx_list.txt`, `uv_tools_list.txt`, `fnm_list.txt` |
 | Installed apps | `system_apps_list.txt` (`ls /Applications`, Python sync) |
@@ -137,7 +141,6 @@ These are synced to `dotfiles/` for restore on disk but **gitignored**:
 | Source | Why excluded |
 |--------|--------------|
 | `~/.ssh/` (incl. private keys) | Secrets — use 1Password + encrypted external |
-| `~/.cursor/mcp.json` | API keys / MCP secrets |
 | `~/.claude.json` | Local Claude state, may contain sensitive config |
 | `~/.aws/credentials` | Long-lived keys if present |
 
@@ -151,6 +154,7 @@ Public SSH (`config`, `known_hosts`, `*.pub`) could be committed later; whole `.
 |------|----------------|
 | Shell config, aliases, crontab | `zsh-env` repo |
 | Cursor/Claude rules, skills, hooks | `kb/agents` |
+| MCP tokens / API keys in `mcp.json` | Prefer env/1P — current file has none; do not commit secrets |
 | `~/.zsh_history` | Too sensitive (tokens in commands); not in manifest |
 | `~/.npmrc` | Registry auth tokens |
 | GPG secret keys | 1Password + encrypted external |
