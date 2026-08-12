@@ -43,7 +43,11 @@ unzip "$work/backup.zip" -d "$work"
 # inspect, then remove "$work"
 ```
 
-## Single file (recovery codes, emergency kits, …)
+## Verify
+
+After encrypt (plaintext still present): decrypt to a temp file and `cmp -s` against the original before deleting plaintext.
+
+Re-check an existing `.enc` (no plaintext): decrypt to a temp dir, confirm openssl exit 0 and expected type (`%PDF` header, non-empty text, or `unzip -t` for zip). Do not print secret contents. Wrong passphrase → FAIL.
 
 ```bash
 # Encrypt
