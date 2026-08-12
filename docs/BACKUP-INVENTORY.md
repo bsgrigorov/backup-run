@@ -41,6 +41,9 @@ Data lands in `~/dev/repos/zzz/backup/` (`bsgrigorov/backup`, private GitHub). T
 | `~/.config/gcloud/configurations/` only | `dotfiles/.config/gcloud/configurations/` | **Non-secret** named configs (accounts, project defaults). **Not** `access_tokens.db`, `credentials.db`, ADC, or `legacy_credentials/` — re-auth on new Mac |
 | `~/.config/wireshark/`, `k3d/`, `htop/` | `dotfiles/.config/…` | |
 | `~/.config/ghostty/config` | `dotfiles/.config/ghostty/` | Keybinds/UI only — safe to commit. Do not back up scrollback/caches. |
+| `~/.claude.json` | `dotfiles/` | Claude Code local state (profile metadata, MCP entries, project usage). Private repo only — contains email/org IDs, not API tokens. |
+| `~/.codex/config.toml` | `dotfiles/.codex/` | Model/plugins. **Not** `auth.json` (gitignored if present). |
+| `~/.conductor/settings.toml` | `dotfiles/.conductor/` | Tiny non-secret defaults. |
 
 ### App settings (plist + Application Support)
 
@@ -52,9 +55,10 @@ Data lands in `~/dev/repos/zzz/backup/` (`bsgrigorov/backup`, private GitHub). T
 | Terminal.app | `configs/terminal_plist` |
 | Alfred (both plists) | `configs/alfred/` |
 | BetterTouchTool — plist + app support | `configs/bettertouchtool/` |
-| Raycast | `configs/raycast/` |
+| Raycast | `configs/raycast/` (plist + extensions.list) |
 | Stats | `configs/stats/` |
 | BetterDisplay | `configs/betterdisplay/` |
+| Time Out | `configs/timeout/` |
 | LaunchAgents | `configs/launchagents/` |
 
 ### Cursor extras (shell script)
@@ -62,9 +66,20 @@ Data lands in `~/dev/repos/zzz/backup/` (`bsgrigorov/backup`, private GitHub). T
 | Source | Backup path | Notes |
 |--------|-------------|-------|
 | `cursor --list-extensions --show-versions` | `configs/cursor/extensions.list` | |
-| `code` (VS Code.app binary, not shell `code`→cursor alias) | `configs/vscode/extensions.list` | Not in Brewfile (`--no-vscode`) |
+| `code` (unaliased; skip if path is cursor) | `configs/vscode/extensions.list` | Not in Brewfile (`--no-vscode`) |
 | `~/.cursor/mcp.json` | `dotfiles/.cursor/` | Committed. Currently gcloud MCP only (no tokens). Re-check if you add API keys. |
 | `~/.cursor/argv.json`, `sandbox.json` | `configs/cursor/cli/` + `dotfiles/.cursor/` | Duplicated paths — fine for now |
+
+### Raycast restore (important)
+
+Plist + `extensions.list` are **not** a full restore. Hotkeys, aliases, snippets, AI chats, etc. live in Raycast’s encrypted store.
+
+| Method | What | Notes |
+|--------|------|-------|
+| **Export Settings & Data** | `.rayconfig` (encrypted, passphrase) | Run in Raycast; save under `backup/custom_backups/raycast/` (or GDrive). Jan 2026 export is stale — re-export. |
+| **Scheduled Export** (Pro) | Auto `.rayconfig` to a folder | Settings → Advanced → Export; point at `custom_backups/raycast/` or a sync folder |
+| **Cloud Sync** (Pro) | Cross-device | Settings → Cloud Sync; still keep a `.rayconfig` backup |
+| **Do not** | Copy `~/.config/raycast/extensions` (415MB) or `raycast-enc.sqlite` | Store installs + encrypted DB; size cap would refuse anyway |
 
 Hooks, rules, skills → **`kb/agents`** (separate repo).
 
@@ -141,7 +156,7 @@ These are synced to `dotfiles/` for restore on disk but **gitignored**:
 | Source | Why excluded |
 |--------|--------------|
 | `~/.ssh/` (incl. private keys) | Secrets — use 1Password + encrypted external |
-| `~/.claude.json` | Local Claude state, may contain sensitive config |
+| `~/.codex/auth.json` | Codex credentials |
 | `~/.aws/credentials` | Long-lived keys if present |
 
 Public SSH (`config`, `known_hosts`, `*.pub`) could be committed later; whole `.ssh` dir is ignored for simplicity.

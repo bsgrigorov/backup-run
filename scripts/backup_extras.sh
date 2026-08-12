@@ -15,6 +15,7 @@ MACOS="$BACKUP_ROOT/configs/macos-system"
 CHROME="$BACKUP_ROOT/configs/chrome/bookmarks"
 CURSOR="$BACKUP_ROOT/configs/cursor"
 VSCODE="$BACKUP_ROOT/configs/vscode"
+RAYCAST="$BACKUP_ROOT/configs/raycast"
 
 write_if_cmd() {
     local label=$1 cmd=$2 dest=$3
@@ -44,7 +45,7 @@ copy_if_file() {
     fi
 }
 
-mkdir -p "$PKG" "$MACOS" "$CHROME" "$CURSOR/cli" "$VSCODE"
+mkdir -p "$PKG" "$MACOS" "$CHROME" "$CURSOR/cli" "$VSCODE" "$RAYCAST"
 
 echo "🔄 backup_extras: package manifests"
 write_if_cmd "pnpm globals" "pnpm list -g --depth 0" "$PKG/pnpm_list.txt"
@@ -69,25 +70,37 @@ fi
 copy_if_file "$HOME/.cursor/argv.json" "$CURSOR/cli/argv.json" "cursor argv.json"
 copy_if_file "$HOME/.cursor/sandbox.json" "$CURSOR/cli/sandbox.json" "cursor sandbox.json"
 
-# Prefer the VS Code.app binary — interactive shells alias `code` → cursor.
-VSCODE_BIN="/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code"
-if [[ ! -x "$VSCODE_BIN" ]]; then
-    VSCODE_BIN="$(command -v code 2>/dev/null || true)"
-    case "$VSCODE_BIN" in
-        *cursor*) VSCODE_BIN="" ;;
-    esac
-fi
+# Resolve `code` without shell aliases (interactive zsh aliases code→cursor).
+# `command -v` in this bash script is unaliased; still reject cursor paths.
+VSCODE_BIN="$(command -v code 2>/dev/null || true)"
+case "$VSCODE_BIN" in
+    *cursor*|"") VSCODE_BIN="" ;;
+esac
 if [[ -n "$VSCODE_BIN" && -x "$VSCODE_BIN" ]]; then
     "$VSCODE_BIN" --list-extensions --show-versions >"$VSCODE/extensions.list" 2>/dev/null || true
     if [[ -s "$VSCODE/extensions.list" ]]; then
-        log_ok "vscode extensions.list (via $VSCODE_BIN)"
+        log_ok "vscode extensions.list"
     else
         rm -f "$VSCODE/extensions.list"
         log_skip "vscode extensions.list"
     fi
     rm -f "$PKG/vscode_list.txt"
 else
-    log_skip "vscode CLI (code aliased to cursor or missing; set VS Code.app path)"
+    log_skip "vscode CLI (code missing or resolves to cursor)"
+fi
+
+# Raycast: extension titles only (415MB install tree + encrypted sqlite stay local).
+# Full restore = Raycast "Export Settings & Data" → custom_backups/raycast/*.rayconfig
+# and/or Raycast Pro Cloud Sync — plist alone is not enough.
+if run_tool_python -m backup_run.extras.raycast extensions-list "$RAYCAST/extensions.list"; then
+    if [[ -s "$RAYCAST/extensions.list" ]]; then
+        log_ok "raycast extensions.list"
+    else
+        rm -f "$RAYCAST/extensions.list"
+        log_skip "raycast extensions.list"
+    fi
+else
+    log_skip "raycast extensions.list"
 fi
 
 echo "🔄 backup_extras: macOS system settings"
