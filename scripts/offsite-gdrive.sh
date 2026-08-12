@@ -1,43 +1,39 @@
 #!/usr/bin/env bash
-# Offline encrypted snapshot of the backup data → Google Drive Documents/Backup.
+# Encrypted offsite snapshot of the backup data → Google Drive Documents/Backup.
 #
-# Default: --zip of the current working tree (~2 MB). Excludes .git, dotfiles/.ssh.
-#   The backup repo's .git history is ~136 MB of long-since-removed binaries
-#   (minikube, krew plugins, kube caches), so we ship current files, not history.
-# Optional: --bundle for a full git bundle (all history; large — ~97 MB).
+# Zips the current working tree (~2 MB), excluding .git and dotfiles/.ssh.
+# Current files only, no git history: GitHub already holds the history, and this
+# repo's .git carries ~136 MB of long-since-removed binaries (minikube, krew
+# plugins, kube caches) that are worthless offsite.
 #
 # Usage:
-#   ./scripts/offsite-gdrive.sh                 # zip; GUI/tty passphrase prompt
-#   ./scripts/offsite-gdrive.sh --verify        # zip, then decrypt+check in a temp dir
+#   ./scripts/offsite-gdrive.sh                 # GUI/tty passphrase prompt
+#   ./scripts/offsite-gdrive.sh --verify        # then decrypt+check in a temp dir
 #   ./scripts/offsite-gdrive.sh --dry-run
 #   BACKUP_OFFSITE_PASSPHRASE='…' ./scripts/offsite-gdrive.sh   # non-interactive
 #   BACKUP_OFFSITE_OP_REF='op://Personal/…/password' ./scripts/offsite-gdrive.sh
 #
-# Decrypt + restore into a throwaway temp dir, e.g.:
+# Restore into a throwaway temp dir:
 #   work="$(mktemp -d "${TMPDIR:-/tmp}/backup-restore.XXXXXX")"
 #   openssl enc -d -aes-256-cbc -pbkdf2 -in backup-tree-YYYYMMDD.zip.enc -out "$work/backup.zip"
 #   unzip "$work/backup.zip" -d "$work"    # inspect, then remove "$work"
-# Or just run with --verify to prove the artifact and clean up automatically.
+# Or run with --verify to prove the artifact and clean up automatically.
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BACKUP_ROOT="${BACKUP_ROOT:-$HOME/dev/repos/zzz/backup}"
 GDRIVE_BACKUP="${GDRIVE_BACKUP:-$HOME/Library/CloudStorage/GoogleDrive-b.s.grigorov@gmail.com/My Drive/Documents/Backup}"
 STAMP="$(date +%Y%m%d)"
-MODE=zip   # zip | bundle
 DRY_RUN=0
 KEEP_PLAIN=0
 VERIFY=0
 
 usage() {
   cat <<EOF
-Usage: $(basename "$0") [--zip|--bundle] [--verify] [--dry-run] [--keep-plain] [-h]
+Usage: $(basename "$0") [--verify] [--dry-run] [--keep-plain] [-h]
 
-Write an encrypted offsite copy of the backup data into:
+Write an encrypted zip of the backup data into:
   $GDRIVE_BACKUP
 
-  --zip         zip current working tree (default; ~2 MB; excludes .git, .ssh)
-  --bundle      git bundle --all (full history; large — ~97 MB)
   --verify      after writing, decrypt into a temp dir, check, and remove it
   --dry-run     print plan; do not write
   --keep-plain  leave the unencrypted intermediate in \$TMPDIR (debug only)
@@ -53,8 +49,6 @@ EOF
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --bundle) MODE=bundle; shift ;;
-    --zip) MODE=zip; shift ;;
     --verify) VERIFY=1; shift ;;
     --dry-run) DRY_RUN=1; shift ;;
     --keep-plain) KEEP_PLAIN=1; shift ;;
@@ -67,8 +61,10 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+# .git must exist: cheap guard that BACKUP_ROOT really is the backup repo and
+# not a stray path we'd silently archive instead.
 if [[ ! -d "$BACKUP_ROOT/.git" ]]; then
-  echo "ERROR: not a git repo: $BACKUP_ROOT" >&2
+  echo "ERROR: not the backup repo: $BACKUP_ROOT" >&2
   exit 1
 fi
 if [[ ! -d "$GDRIVE_BACKUP" ]]; then
@@ -77,17 +73,11 @@ if [[ ! -d "$GDRIVE_BACKUP" ]]; then
   exit 1
 fi
 
-if [[ "$MODE" == bundle ]]; then
-  PLAIN="/tmp/backup-git-${STAMP}.bundle"
-  OUT="$GDRIVE_BACKUP/backup-git-${STAMP}.bundle.enc"
-else
-  PLAIN="/tmp/backup-tree-${STAMP}.zip"
-  OUT="$GDRIVE_BACKUP/backup-tree-${STAMP}.zip.enc"
-fi
+PLAIN="${TMPDIR:-/tmp}/backup-tree-${STAMP}.zip"
+OUT="$GDRIVE_BACKUP/backup-tree-${STAMP}.zip.enc"
 
 echo "==> offsite-gdrive"
 echo "    source: $BACKUP_ROOT"
-echo "    mode:   $MODE"
 echo "    dest:   $OUT"
 
 if [[ "$DRY_RUN" -eq 1 ]]; then
@@ -146,19 +136,15 @@ resolve_passphrase() {
   printf '%s' "$p1"
 }
 
-echo "==> creating $MODE artifact"
-if [[ "$MODE" == bundle ]]; then
-  git -C "$BACKUP_ROOT" bundle create "$PLAIN" --all
-else
-  (
-    cd "$(dirname "$BACKUP_ROOT")"
-    zip -r -q "$PLAIN" "$(basename "$BACKUP_ROOT")" \
-      -x '*/.DS_Store' \
-      -x 'backup/.git/*' \
-      -x 'backup/dotfiles/.ssh/*' \
-      -x 'backup/dotfiles/.ssh'
-  )
-fi
+echo "==> creating zip"
+(
+  cd "$(dirname "$BACKUP_ROOT")"
+  zip -r -q "$PLAIN" "$(basename "$BACKUP_ROOT")" \
+    -x '*/.DS_Store' \
+    -x 'backup/.git/*' \
+    -x 'backup/dotfiles/.ssh/*' \
+    -x 'backup/dotfiles/.ssh'
+)
 ls -lh "$PLAIN"
 
 PASS="$(resolve_passphrase)"
@@ -184,24 +170,20 @@ if [[ "$VERIFY" -eq 1 ]]; then
   echo "==> verifying → $WORK (auto-removed)"
   DEC="$WORK/artifact"
   openssl enc -d -aes-256-cbc -pbkdf2 -in "$OUT" -out "$DEC" -pass "fd:3" 3<<<"$PASS"
-  if [[ "$MODE" == bundle ]]; then
-    # Clone into the temp dir: proves the bundle decrypts and restores end-to-end.
-    git clone --quiet "$DEC" "$WORK/repo"
-    echo "bundle OK — cloned $(git -C "$WORK/repo" rev-list --count HEAD) commits"
-  else
-    unzip -t -q "$DEC" && echo "zip OK"
-  fi
+  unzip -t -q "$DEC"
+  unzip -q "$DEC" -d "$WORK/tree"
+  # Prove real files came back, not just a well-formed zip.
+  for f in README.md packages/Brewfile manual/apps.md; do
+    test -s "$WORK/tree/backup/$f" || { echo "ERROR: missing $f in restore" >&2; exit 1; }
+  done
+  echo "restored $(find "$WORK/tree" -type f | wc -l | tr -d ' ') files"
   echo "==> verify passed"
 fi
 unset PASS
 
 echo "==> done"
-echo "    verify next time: $(basename "$0") --${MODE} --verify"
-echo "    manual decrypt into a throwaway dir (auto-clean):"
+echo "    verify next time: $(basename "$0") --verify"
+echo "    manual restore into a throwaway dir:"
 echo "      work=\"\$(mktemp -d \"\${TMPDIR:-/tmp}/backup-restore.XXXXXX\")\""
-echo "      openssl enc -d -aes-256-cbc -pbkdf2 -in \"$OUT\" -out \"\$work/artifact\""
-if [[ "$MODE" == bundle ]]; then
-  echo "      git clone \"\$work/artifact\" \"\$work/backup\"   # inspect, then: rm -rf \"\$work\""
-else
-  echo "      unzip \"\$work/artifact\" -d \"\$work\"           # inspect, then: rm -rf \"\$work\""
-fi
+echo "      openssl enc -d -aes-256-cbc -pbkdf2 -in \"$OUT\" -out \"\$work/backup.zip\""
+echo "      unzip \"\$work/backup.zip\" -d \"\$work\"    # inspect, then remove \"\$work\""

@@ -48,8 +48,8 @@ backup-run --backup-all --skip-git   # sync only (no git)
 
 > **`--reinstall-*` is deprecated and disabled.** Every reinstall flag prints a deprecation notice and exits 1 without touching the filesystem. The implementations stay in `src/backup_run/reinstall.py` for reference only. Use the `migrate-mac` skill instead.
 
-**Offsite (Google Drive):** `./scripts/offsite-gdrive.sh` — encrypted `git bundle` (default) or `--zip` into  
-`~/Library/CloudStorage/GoogleDrive-…/My Drive/Documents/Backup`. See `kb-projects/projects/mac-setup/restore.md` § Offsite.
+**Offsite (Google Drive):** `./scripts/offsite-gdrive.sh` — encrypted zip of the current working tree (~2 MB; excludes `.git` and `dotfiles/.ssh`) into  
+`~/Library/CloudStorage/GoogleDrive-…/My Drive/Documents/Backup`. Add `--verify` to decrypt and check the artifact after writing. See `kb-projects/projects/mac-setup/restore.md` § Offsite.
 
 ## Extras (not in Python sync)
 
