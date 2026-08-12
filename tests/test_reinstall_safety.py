@@ -95,16 +95,8 @@ def test_source_invariants():
     # shlex.quote as a filesystem path was the original config/font restore bug.
     assert "quote(" not in text, "shlex.quote must not be used as a filesystem path"
     assert "dirs_exist_ok=True" in text, "config dir restore must tolerate existing dests"
-    # Guard rail: no entrypoint may lose its deprecation exit.
-    for fn in (
-        "reinstall_dots_sb",
-        "reinstall_fonts_sb",
-        "reinstall_configs_sb",
-        "reinstall_packages_sb",
-        "reinstall_all_sb",
-    ):
-        assert f'_deprecated_exit("--{fn[10:-3].replace("_", "-")}' in text or True
-    assert text.count("_deprecated_exit(") == 6, "expected 5 call sites + 1 definition"
+    # Guard rail: no entrypoint may quietly lose its deprecation exit.
+    assert text.count("_deprecated_exit(") == 6, "expected 1 definition + 5 call sites"
 
 
 if __name__ == "__main__":

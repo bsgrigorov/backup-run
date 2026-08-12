@@ -101,16 +101,24 @@ from .utils import (
     help="Skip setting new back up directory path prompt.",
 )
 @click.option("--no-splash", is_flag=True, default=False, help="Don't display splash screen.")
-@click.option("--reinstall-all", is_flag=True, default=False, help="Full reinstallation.")
-@click.option("--reinstall-configs", is_flag=True, default=False, help="Reinstall configs.")
+@click.option(
+    "--reinstall-all", is_flag=True, default=False, help="[DEPRECATED] Disabled; exits 1."
+)
+@click.option(
+    "--reinstall-configs", is_flag=True, default=False, help="[DEPRECATED] Disabled; exits 1."
+)
 @click.option(
     "--reinstall-dots",
     is_flag=True,
     default=False,
-    help="Reinstall dotfiles and dotfolders.",
+    help="[DEPRECATED] Disabled; exits 1.",
 )
-@click.option("--reinstall-fonts", is_flag=True, default=False, help="Reinstall fonts.")
-@click.option("--reinstall-packages", is_flag=True, default=False, help="Reinstall packages.")
+@click.option(
+    "--reinstall-fonts", is_flag=True, default=False, help="[DEPRECATED] Disabled; exits 1."
+)
+@click.option(
+    "--reinstall-packages", is_flag=True, default=False, help="[DEPRECATED] Disabled; exits 1."
+)
 @click.option("--remote", default=None, help="Set remote URL for the git repo.")
 @click.option("--edit", is_flag=True, default=False, help="Open config file in $EDITOR.")
 @click.option(
