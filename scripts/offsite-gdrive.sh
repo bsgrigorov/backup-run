@@ -15,14 +15,16 @@
 #
 # Restore into a throwaway temp dir:
 #   work="$(mktemp -d "${TMPDIR:-/tmp}/backup-restore.XXXXXX")"
-#   openssl enc -d -aes-256-cbc -pbkdf2 -in git-bsgrigorov-backup-YYYYMMDD.zip.enc -out "$work/backup.zip"
+#   openssl enc -d -aes-256-cbc -pbkdf2 -in git-bsgrigorov-backup.zip.enc -out "$work/backup.zip"
 #   unzip "$work/backup.zip" -d "$work"    # inspect, then remove "$work"
 # Or run with --verify to prove the artifact and clean up automatically.
 set -euo pipefail
 
 BACKUP_ROOT="${BACKUP_ROOT:-$HOME/dev/repos/zzz/backup}"
 GDRIVE_BACKUP="${GDRIVE_BACKUP:-$HOME/Library/CloudStorage/GoogleDrive-b.s.grigorov@gmail.com/My Drive/Documents/Backup}"
-STAMP="$(date +%Y%m%d)"
+# Fixed name: each run overwrites the same Drive file (no dated clutter).
+# GitHub holds history; Drive version history can recover a prior overwrite.
+NAME="git-bsgrigorov-backup"
 DRY_RUN=0
 KEEP_PLAIN=0
 VERIFY=0
@@ -74,7 +76,6 @@ if [[ ! -d "$GDRIVE_BACKUP" ]]; then
 fi
 
 # Name mirrors the private GitHub repo (bsgrigorov/backup) so it's obvious in Drive.
-NAME="git-bsgrigorov-backup-${STAMP}"
 PLAIN="${TMPDIR:-/tmp}/${NAME}.zip"
 OUT="$GDRIVE_BACKUP/${NAME}.zip.enc"
 
