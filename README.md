@@ -44,7 +44,9 @@ backup-run --backup-all --skip-git   # sync only (no git)
 
 **Inventory:** [docs/BACKUP-INVENTORY.md](docs/BACKUP-INVENTORY.md) — human-readable list of what is backed up, excluded, and manual.
 
-**Restore:** `~/dev/repos/zzz/bootstrap/skills/migrate-mac/SKILL.md` — canonical, agent-driven restore procedure. It audits the current manifest and backup contents on every run so new backup coverage is surfaced before restore. The `--reinstall-*` commands are not approved for live restore until their safety issues are fixed and tested.
+**Restore:** `~/dev/repos/zzz/bootstrap/skills/migrate-mac/SKILL.md` — canonical, agent-driven restore procedure. It audits the current manifest and backup contents on every run so new backup coverage is surfaced before restore.
+
+> **`--reinstall-*` is deprecated and disabled.** Every reinstall flag prints a deprecation notice and exits 1 without touching the filesystem. Restore never worked end to end, and writing into a live `$HOME`/`Library` is too dangerous to leave reachable. The implementations stay in `src/backup_run/reinstall.py` for reference only. Use the `migrate-mac` skill instead.
 
 ## Extras (not in Python sync)
 

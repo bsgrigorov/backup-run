@@ -96,7 +96,13 @@ def test_source_invariants():
     assert "quote(" not in text, "shlex.quote must not be used as a filesystem path"
     assert "dirs_exist_ok=True" in text, "config dir restore must tolerate existing dests"
     # Guard rail: no entrypoint may quietly lose its deprecation exit.
-    assert text.count("_deprecated_exit(") == 6, "expected 1 definition + 5 call sites"
+    assert text.count("reinstall_deprecated_exit(") == 6, "expected 1 definition + 5 call sites"
+    # And the CLI must refuse before it can mutate .gitignore or init git.
+    cli = (SRC / "backup_run" / "__main__.py").read_text()
+    assert "reinstall_deprecated_exit(" in cli, "CLI is missing the early deprecation guard"
+    assert cli.index('reinstall_deprecated_exit("reinstall")') < cli.index(
+        "safe_create_config()"
+    ), "CLI guard must run before any config/git setup"
 
 
 if __name__ == "__main__":

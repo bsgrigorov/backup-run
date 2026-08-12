@@ -40,6 +40,7 @@ from .prompts import (
 from .reinstall import (
     reinstall_all_sb,
     reinstall_configs_sb,
+    reinstall_deprecated_exit,
     reinstall_dots_sb,
     reinstall_fonts_sb,
     reinstall_packages_sb,
@@ -161,6 +162,11 @@ def cli(
     Easily back up installed packages, dotfiles, and app configs to a git repo.
     Config: manifest/backup-run.conf in the tool repo.
     """
+    # Reinstall is deprecated and disabled. Exit first, before config upgrade, backup
+    # dir creation or git init, so a disabled command can't mutate anything.
+    if any([reinstall_all, reinstall_configs, reinstall_dots, reinstall_fonts, reinstall_packages]):
+        reinstall_deprecated_exit("reinstall")
+
     safe_create_config()
     check_if_config_upgrade_needed()
     check_insecure_config_permissions()

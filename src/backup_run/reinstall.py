@@ -29,7 +29,7 @@ _DEPRECATION_NOTE = (
 )
 
 
-def _deprecated_exit(command: str) -> None:
+def reinstall_deprecated_exit(command: str) -> None:
     """Refuse to run and exit 1. Never returns."""
     print_red_bold(f"DEPRECATED: {command} is disabled and does nothing.")
     print_red_bold(_DEPRECATION_NOTE)
@@ -77,7 +77,7 @@ def reinstall_dots_sb(
 ):
     """DEPRECATED — disabled, exits 1. Would reinstall all dotfiles and folders by
     copying them from dots_path to a path relative to home_path, or to an absolute path."""
-    _deprecated_exit("--reinstall-dots")
+    reinstall_deprecated_exit("--reinstall-dots")
     if _skip_if_empty(dots_path, "dotfile"):
         return
     print_section_header("REINSTALLING DOTFILES", Fore.BLUE)
@@ -177,7 +177,7 @@ def reinstall_dots_sb(
 
 def reinstall_fonts_sb(fonts_path: str, dry_run: bool = False):
     """DEPRECATED — disabled, exits 1. Would reinstall all fonts."""
-    _deprecated_exit("--reinstall-fonts")
+    reinstall_deprecated_exit("--reinstall-fonts")
     if _skip_if_empty(fonts_path, "font"):
         return
     print_section_header("REINSTALLING FONTS", Fore.BLUE)
@@ -197,7 +197,7 @@ def reinstall_fonts_sb(fonts_path: str, dry_run: bool = False):
 
 def reinstall_configs_sb(configs_path: str, dry_run: bool = False):
     """DEPRECATED — disabled, exits 1. Would reinstall all configs from the backup."""
-    _deprecated_exit("--reinstall-configs")
+    reinstall_deprecated_exit("--reinstall-configs")
     if _skip_if_empty(configs_path, "config"):
         return
     print_section_header("REINSTALLING CONFIG FILES", Fore.BLUE)
@@ -227,7 +227,7 @@ def reinstall_packages_sb(packages_path: str, dry_run: bool = False):
     from stale global lists and `code --install-extension` while `code` resolves
     to Cursor. Restore Homebrew from the Brewfile and install the rest by hand.
     """
-    _deprecated_exit("--reinstall-packages")
+    reinstall_deprecated_exit("--reinstall-packages")
     if _skip_if_empty(packages_path, "package"):
         return
     print_section_header("PACKAGE REINSTALL (DEPRECATED — AUDIT ONLY)", Fore.YELLOW)
@@ -257,7 +257,7 @@ def reinstall_packages_sb(packages_path: str, dry_run: bool = False):
         "pip3": f"pip3 install -r {packages_path}/pip3_list.txt",
         "gem": f"cat {packages_path}/gem_list.txt | xargs -L 1 gem install",
         "cargo": f"cat {packages_path}/cargo_list.txt | xargs -L 1 cargo install",
-        "vscode": f"while read ext; do code --install-extension \"$ext\"; done < {vscode_ext}",
+        "vscode": f'while read ext; do code --install-extension "$ext"; done < {vscode_ext}',
     }
     for pm in sorted(package_mgrs):
         if pm == "macports":
@@ -278,7 +278,7 @@ def reinstall_all_sb(
     dry_run: bool = False,
 ):
     """DEPRECATED — disabled, exits 1. Would call all reinstallation methods."""
-    _deprecated_exit("--reinstall-all")
+    reinstall_deprecated_exit("--reinstall-all")
     reinstall_dots_sb(dotfiles_path, dry_run=dry_run)
     reinstall_packages_sb(packages_path, dry_run=dry_run)
     reinstall_fonts_sb(fonts_path, dry_run=dry_run)
