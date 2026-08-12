@@ -1,6 +1,7 @@
 import os
+import sys
+from fnmatch import fnmatch
 from pathlib import Path
-from shlex import quote
 from shutil import copy, copyfile, copytree
 
 from colorama import Fore, Style
@@ -10,23 +11,75 @@ from .config import get_config
 from .printing import *
 from .utils import (
     evaluate_condition,
-    exit_if_dir_is_empty,
     find_path_for_permission_error_reporting,
     get_abs_path_subfiles,
-    run_cmd,
     safe_mkdir,
 )
 
 # NOTE: Naming convention is like this since the CLI flags would otherwise
 #       conflict with the function names.
 
+# DEPRECATED: every reinstall entrypoint is disabled and exits 1. Restore has never
+# worked end to end here and writing to a live $HOME / Library is too dangerous to
+# leave reachable. The implementations below are kept intentionally, unreached, as
+# the reference for what a restore would have to do.
+_DEPRECATION_NOTE = (
+    "Restore is agent-driven: ~/dev/repos/zzz/bootstrap/skills/migrate-mac/SKILL.md\n"
+    "The implementations in reinstall.py are kept for reference only."
+)
+
+
+def _deprecated_exit(command: str) -> None:
+    """Refuse to run and exit 1. Never returns."""
+    print_red_bold(f"DEPRECATED: {command} is disabled and does nothing.")
+    print_red_bold(_DEPRECATION_NOTE)
+    sys.exit(1)
+
+
+def _skip_if_empty(backup_path: str, backup_type: str) -> bool:
+    """Print a notice and return True if there's nothing to reinstall.
+    Unlike a hard exit, this lets --reinstall-all continue with the next category
+    (e.g. an empty fonts/ dir must not abort the whole restore)."""
+    if not os.path.isdir(backup_path) or not os.listdir(backup_path):
+        print_red_bold(f"No {backup_type} backup found — skipping.")
+        return True
+    return False
+
+
+def _reinstall_excludes() -> list[str]:
+    """Paths we intentionally never restore, derived from the gitignore lists.
+
+    Invariant: if we chose not to commit it, we don't copy it back onto a machine.
+    The tool restores from the on-disk dotfiles/ dir, not from git, so gitignore
+    alone does not stop secrets (SSH private keys, .pypirc, gcloud token DBs, ...)
+    from being reinstalled. Returns patterns relative to the dotfiles dir, e.g.
+    ".ssh", ".pypirc", ".config/gcloud/*.db".
+    """
+    cfg = get_config()
+    patterns: set[str] = set()
+    for entry in cfg.get("root-gitignore", []):
+        if entry.startswith("dotfiles/"):
+            patterns.add(entry[len("dotfiles/") :])
+    patterns.update(cfg.get("dotfiles-gitignore", []))
+    return sorted(p.rstrip("/") for p in patterns if p)
+
+
+def _is_excluded(rel_path: str, patterns: list[str]) -> bool:
+    """True if rel_path matches an exclude pattern or lives under an excluded dir."""
+    for pat in patterns:
+        if fnmatch(rel_path, pat) or fnmatch(rel_path, f"{pat}/*"):
+            return True
+    return False
+
 
 def reinstall_dots_sb(
     dots_path: str, home_path: str = os.path.expanduser("~"), dry_run: bool = False
 ):
-    """Reinstall all dotfiles and folders by copying them from dots_path
-    to a path relative to home_path, or to an absolute path."""
-    exit_if_dir_is_empty(dots_path, "dotfile")
+    """DEPRECATED — disabled, exits 1. Would reinstall all dotfiles and folders by
+    copying them from dots_path to a path relative to home_path, or to an absolute path."""
+    _deprecated_exit("--reinstall-dots")
+    if _skip_if_empty(dots_path, "dotfile"):
+        return
     print_section_header("REINSTALLING DOTFILES", Fore.BLUE)
 
     # Get paths of ALL files that we will be reinstalling from config.
@@ -54,6 +107,19 @@ def reinstall_dots_sb(
         else:
             subfiles_to_add = get_abs_path_subfiles(real_path_dotfile)
             dotfiles_to_reinstall.extend(subfiles_to_add)
+
+    # Never restore anything we intentionally kept out of the backup. These files
+    # (SSH private keys, .pypirc, gcloud token DBs, ...) are gitignored but still
+    # sit on disk under dotfiles/, and reinstall copies from disk, not git.
+    excludes = _reinstall_excludes()
+    kept = []
+    for source in dotfiles_to_reinstall:
+        rel = os.path.relpath(source, dots_path).replace(os.sep, "/")
+        if _is_excluded(rel, excludes):
+            print_yellow(f"Skipping excluded (secret/ignored): {rel}")
+            continue
+        kept.append(source)
+    dotfiles_to_reinstall = kept
 
     reinstallation_error_count = 0
     # Create list of tuples containing source and dest paths for dotfile reinstallation
@@ -110,58 +176,67 @@ def reinstall_dots_sb(
 
 
 def reinstall_fonts_sb(fonts_path: str, dry_run: bool = False):
-    """Reinstall all fonts."""
-    exit_if_dir_is_empty(fonts_path, "font")
+    """DEPRECATED — disabled, exits 1. Would reinstall all fonts."""
+    _deprecated_exit("--reinstall-fonts")
+    if _skip_if_empty(fonts_path, "font"):
+        return
     print_section_header("REINSTALLING FONTS", Fore.BLUE)
 
-    # Copy every file in fonts_path to ~/Library/Fonts
+    # Copy every file in fonts_path to the platform fonts dir.
+    fonts_dir = get_fonts_dir()
+    if not dry_run:
+        safe_mkdir(fonts_dir)
     for font in get_abs_path_subfiles(fonts_path):
-        fonts_dir = get_fonts_dir()
-        dest_path = quote(os.path.join(fonts_dir, font.split("/")[-1]))
+        dest_path = os.path.join(fonts_dir, os.path.basename(font))
         if dry_run:
             print_dry_run_copy_info(font, dest_path)
             continue
-        copyfile(quote(font), quote(dest_path))
+        copyfile(font, dest_path)
     print_section_header("FONT REINSTALLATION COMPLETED", Fore.BLUE)
 
 
 def reinstall_configs_sb(configs_path: str, dry_run: bool = False):
-    """Reinstall all configs from the backup."""
-    exit_if_dir_is_empty(configs_path, "config")
+    """DEPRECATED — disabled, exits 1. Would reinstall all configs from the backup."""
+    _deprecated_exit("--reinstall-configs")
+    if _skip_if_empty(configs_path, "config"):
+        return
     print_section_header("REINSTALLING CONFIG FILES", Fore.BLUE)
 
     config = get_config()
     for dest_path, backup_loc in config["config_mapping"].items():
-        dest_path = quote(dest_path)
-        source_path = quote(os.path.join(configs_path, backup_loc))
+        source_path = os.path.join(configs_path, backup_loc)
 
         if dry_run:
             print_dry_run_copy_info(source_path, dest_path)
             continue
 
         if os.path.isdir(source_path):
-            copytree(source_path, dest_path)
+            # dirs_exist_ok so restoring over an existing config dir doesn't raise.
+            copytree(source_path, dest_path, symlinks=True, dirs_exist_ok=True)
         elif os.path.isfile(source_path):
+            safe_mkdir(os.path.dirname(dest_path))
             copyfile(source_path, dest_path)
 
     print_section_header("CONFIG REINSTALLATION COMPLETED", Fore.BLUE)
 
 
 def reinstall_packages_sb(packages_path: str, dry_run: bool = False):
-    """Reinstall all packages from the files in backup/installs."""
+    """DEPRECATED — disabled, exits 1.
 
-    def run_cmd_if_no_dry_run(command, dry_run) -> int:
-        if dry_run:
-            print_yellow_bold(f"$ {command}")
-            # Return 0 for any processes depending on chained successful commands
-            return 0
-        else:
-            return run_cmd(command)
+    Live package restore was unsafe: it ran `pip install -r` / `npm install -g`
+    from stale global lists and `code --install-extension` while `code` resolves
+    to Cursor. Restore Homebrew from the Brewfile and install the rest by hand.
+    """
+    _deprecated_exit("--reinstall-packages")
+    if _skip_if_empty(packages_path, "package"):
+        return
+    print_section_header("PACKAGE REINSTALL (DEPRECATED — AUDIT ONLY)", Fore.YELLOW)
+    print_red_bold(
+        "Package reinstall no longer executes. The commands below are for audit only —\n"
+        "run the ones you want by hand. Global lists go stale and `code` is aliased to Cursor.\n"
+        "Recommended: `brew bundle install --file Brewfile`, then review the rest."
+    )
 
-    exit_if_dir_is_empty(packages_path, "package")
-    print_section_header("REINSTALLING PACKAGES", Fore.BLUE)
-
-    # Figure out which install lists they have saved
     package_mgrs = set()
     backup_root = Path(packages_path).resolve().parent
     vscode_ext = backup_root / "configs" / "vscode" / "extensions.list"
@@ -170,62 +245,29 @@ def reinstall_packages_sb(packages_path: str, dry_run: bool = False):
             package_mgrs.add("brew")
             continue
         manager = file.split("_")[0].replace("-", " ")
-        if manager in [
-            "gem",
-            "cargo",
-            "npm",
-            "pip",
-            "pip3",
-            "brew",
-            "macports",
-        ]:
+        if manager in ["gem", "cargo", "npm", "pip", "pip3", "brew", "macports"]:
             package_mgrs.add(file.split("_")[0])
     if vscode_ext.is_file():
         package_mgrs.add("vscode")
 
-    print_blue_bold("Package Manager Backups Found:")
-    for mgr in package_mgrs:
-        print_yellow(f"\t{mgr}")
-    print()
-
-    # TODO: Multithreading for reinstallation.
-    # Construct reinstallation commands and execute them
-    for pm in package_mgrs:
-        if pm == "brew":
-            print_pkg_mgr_reinstall(pm)
-            brewfile = f"{packages_path}/Brewfile"
-            cmd = f"brew bundle install --no-lock --file {brewfile}"
-            run_cmd_if_no_dry_run(cmd, dry_run)
-        elif pm == "npm":
-            print_pkg_mgr_reinstall(pm)
-            cmd = f"cat {packages_path}/npm_list.txt | xargs npm install -g"
-            run_cmd_if_no_dry_run(cmd, dry_run)
-        elif pm == "pip":
-            print_pkg_mgr_reinstall(pm)
-            cmd = f"pip install -r {packages_path}/pip_list.txt"
-            run_cmd_if_no_dry_run(cmd, dry_run)
-        elif pm == "pip3":
-            print_pkg_mgr_reinstall(pm)
-            cmd = f"pip3 install -r {packages_path}/pip3_list.txt"
-            run_cmd_if_no_dry_run(cmd, dry_run)
-        elif pm == "vscode":
-            print_pkg_mgr_reinstall(pm)
-            with open(vscode_ext) as file:
-                for package in file:
-                    cmd = f"code --install-extension {package.strip()}"
-                    run_cmd_if_no_dry_run(cmd, dry_run)
-        elif pm == "macports":
+    audit_cmds = {
+        "brew": f"brew bundle install --no-lock --file {packages_path}/Brewfile",
+        "npm": f"cat {packages_path}/npm_list.txt | xargs npm install -g",
+        "pip": f"pip install -r {packages_path}/pip_list.txt",
+        "pip3": f"pip3 install -r {packages_path}/pip3_list.txt",
+        "gem": f"cat {packages_path}/gem_list.txt | xargs -L 1 gem install",
+        "cargo": f"cat {packages_path}/cargo_list.txt | xargs -L 1 cargo install",
+        "vscode": f"while read ext; do code --install-extension \"$ext\"; done < {vscode_ext}",
+    }
+    for pm in sorted(package_mgrs):
+        if pm == "macports":
             print_red_bold("WARNING: Macports reinstallation is not supported.")
-        elif pm == "gem":
-            print_pkg_mgr_reinstall(pm)
-            cmd = f"cat {packages_path}/gem_list.txt | xargs -L 1 gem install"
-            run_cmd_if_no_dry_run(cmd, dry_run)
-        elif pm == "cargo":
-            print_pkg_mgr_reinstall(pm)
-            cmd = f"cat {packages_path}/cargo_list.txt | xargs -L 1 cargo install"
-            run_cmd_if_no_dry_run(cmd, dry_run)
+            continue
+        cmd = audit_cmds.get(pm)
+        if cmd:
+            print_yellow_bold(f"$ {cmd}")
 
-    print_section_header("PACKAGE REINSTALLATION COMPLETED", Fore.BLUE)
+    print_section_header("PACKAGE AUDIT COMPLETED", Fore.YELLOW)
 
 
 def reinstall_all_sb(
@@ -235,7 +277,8 @@ def reinstall_all_sb(
     configs_path: str,
     dry_run: bool = False,
 ):
-    """Call all reinstallation methods."""
+    """DEPRECATED — disabled, exits 1. Would call all reinstallation methods."""
+    _deprecated_exit("--reinstall-all")
     reinstall_dots_sb(dotfiles_path, dry_run=dry_run)
     reinstall_packages_sb(packages_path, dry_run=dry_run)
     reinstall_fonts_sb(fonts_path, dry_run=dry_run)

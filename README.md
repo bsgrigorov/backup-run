@@ -44,6 +44,8 @@ backup-run --backup-all --skip-git   # sync only (no git)
 
 **Inventory:** [docs/BACKUP-INVENTORY.md](docs/BACKUP-INVENTORY.md) — human-readable list of what is backed up, excluded, and manual.
 
+**Restore:** `~/dev/repos/zzz/bootstrap/skills/migrate-mac/SKILL.md` — canonical, agent-driven restore procedure. It audits the current manifest and backup contents on every run so new backup coverage is surfaced before restore. The `--reinstall-*` commands are not approved for live restore until their safety issues are fixed and tested.
+
 ## Extras (not in Python sync)
 
 Shell orchestration under `scripts/`; Python helpers under `src/backup_run/extras/`. Runtime deps: `git`, Python 3.11+, **PyYAML** (via `uv sync` or `pipx install -e .`), and `manifest/backup-run.conf`.
@@ -66,5 +68,6 @@ uv build
 
 ## Related repos
 
+- `bootstrap` — owns the canonical `migrate-mac` restore skill
 - `kb/agents` — Cursor hooks/rules/skills (separate git push via `init.sh`)
 - `zsh-env` — shell config (separate git push)
