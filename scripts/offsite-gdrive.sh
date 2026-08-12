@@ -15,7 +15,7 @@
 #
 # Restore into a throwaway temp dir:
 #   work="$(mktemp -d "${TMPDIR:-/tmp}/backup-restore.XXXXXX")"
-#   openssl enc -d -aes-256-cbc -pbkdf2 -in backup-tree-YYYYMMDD.zip.enc -out "$work/backup.zip"
+#   openssl enc -d -aes-256-cbc -pbkdf2 -in git-bsgrigorov-backup-YYYYMMDD.zip.enc -out "$work/backup.zip"
 #   unzip "$work/backup.zip" -d "$work"    # inspect, then remove "$work"
 # Or run with --verify to prove the artifact and clean up automatically.
 set -euo pipefail
@@ -73,8 +73,10 @@ if [[ ! -d "$GDRIVE_BACKUP" ]]; then
   exit 1
 fi
 
-PLAIN="${TMPDIR:-/tmp}/backup-tree-${STAMP}.zip"
-OUT="$GDRIVE_BACKUP/backup-tree-${STAMP}.zip.enc"
+# Name mirrors the private GitHub repo (bsgrigorov/backup) so it's obvious in Drive.
+NAME="git-bsgrigorov-backup-${STAMP}"
+PLAIN="${TMPDIR:-/tmp}/${NAME}.zip"
+OUT="$GDRIVE_BACKUP/${NAME}.zip.enc"
 
 echo "==> offsite-gdrive"
 echo "    source: $BACKUP_ROOT"
