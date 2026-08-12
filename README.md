@@ -46,7 +46,10 @@ backup-run --backup-all --skip-git   # sync only (no git)
 
 **Restore:** `~/dev/repos/zzz/bootstrap/skills/migrate-mac/SKILL.md` — canonical, agent-driven restore procedure. It audits the current manifest and backup contents on every run so new backup coverage is surfaced before restore.
 
-> **`--reinstall-*` is deprecated and disabled.** Every reinstall flag prints a deprecation notice and exits 1 without touching the filesystem. Restore never worked end to end, and writing into a live `$HOME`/`Library` is too dangerous to leave reachable. The implementations stay in `src/backup_run/reinstall.py` for reference only. Use the `migrate-mac` skill instead.
+> **`--reinstall-*` is deprecated and disabled.** Every reinstall flag prints a deprecation notice and exits 1 without touching the filesystem. The implementations stay in `src/backup_run/reinstall.py` for reference only. Use the `migrate-mac` skill instead.
+
+**Offsite (Google Drive):** `./scripts/offsite-gdrive.sh` — encrypted `git bundle` (default) or `--zip` into  
+`~/Library/CloudStorage/GoogleDrive-…/My Drive/Documents/Backup`. See `kb-projects/projects/mac-setup/restore.md` § Offsite.
 
 ## Extras (not in Python sync)
 
