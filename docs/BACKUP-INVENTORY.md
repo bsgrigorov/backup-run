@@ -172,7 +172,8 @@ Public SSH (`config`, `known_hosts`, `*.pub`) are easy to recreate; private keys
 | MCP tokens / API keys in `mcp.json` | Prefer env/1P — current file has none; do not commit secrets |
 | `~/.zsh_history` | Too sensitive (tokens in commands); not in manifest |
 | `~/.npmrc` | Registry auth tokens |
-| GPG secret keys | 1Password + encrypted external |
+| GPG secret keys | 1Password + encrypted external — **procedure:** `backup/manual/gpg.md` |
+| SSH private keys | 1Password SSH Key + optional Drive `.enc` — **procedure:** `backup/manual/ssh.md` |
 | `zsh-env/shell/secret/` | 1Password or backup disk |
 | Google Drive `backup/` folder | Manual sync for large blobs |
 | All source repos | GitHub (`git push`) |
@@ -185,8 +186,9 @@ Public SSH (`config`, `known_hosts`, `*.pub`) are easy to recreate; private keys
 1. Run `backup` or `backup -s`
 2. Push `kb/agents`, `zsh-env`, and any active project repos
 3. Copy `zsh-env/shell/secret/` to 1Password
-4. Verify 1Password fully synced
-5. Optional: sync Google Drive `backup/` folder
+4. Confirm SSH + GPG backups per `backup/manual/ssh.md` and `backup/manual/gpg.md` (1P items present; optional Drive `.enc` refreshed)
+5. Verify 1Password fully synced
+6. Optional: sync Google Drive `Documents/Backup` folder
 
 ---
 
@@ -195,4 +197,5 @@ Public SSH (`config`, `known_hosts`, `*.pub`) are easy to recreate; private keys
 - [ ] Private repo only (`bsgrigorov/backup`)
 - [ ] Never commit `.npmrc`, `.zsh_history`, or PATs in shell history
 - [ ] Rotate tokens if they ever appeared in git history
-- [ ] SSH private keys in 1Password, not in this repo
+- [ ] SSH private keys in 1Password (+ optional Drive `.enc`), not in this repo — see `backup/manual/ssh.md`
+- [ ] GPG secret export in 1Password — see `backup/manual/gpg.md`
