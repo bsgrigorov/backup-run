@@ -155,11 +155,11 @@ These are synced to `dotfiles/` for restore on disk but **gitignored**:
 
 | Source | Why excluded |
 |--------|--------------|
-| `~/.ssh/` (incl. private keys) | Secrets — use 1Password + encrypted external |
+| `~/.ssh/` (incl. private keys) | **Not copied.** Removed from manifest. Live keys → 1Password SSH Key; optional Drive `ssh-id_ed25519.enc`. Gitignore still blocks `dotfiles/.ssh` if anything lands there. |
 | `~/.codex/auth.json` | Codex credentials |
 | `~/.aws/credentials` | Long-lived keys if present |
 
-Public SSH (`config`, `known_hosts`, `*.pub`) could be committed later; whole `.ssh` dir is ignored for simplicity.
+Public SSH (`config`, `known_hosts`, `*.pub`) are easy to recreate; private keys stay out of this repo entirely.
 
 ---
 

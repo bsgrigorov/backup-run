@@ -67,7 +67,6 @@ def get_default_config() -> dict:
             ".config/zsh": {},
             ".profile": {},
             ".pypirc": {},
-            ".ssh": {},
             ".zshenv": {},
             f"{strip_home(get_config_path())}": {},
         },
