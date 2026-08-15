@@ -63,6 +63,6 @@ openssl enc -d -aes-256-cbc -pbkdf2 -in FILE.enc -out "$work/FILE"
 ## Related
 
 - Skill (agent): `openssl-encrypt` — files, folders/zips, short text
-- Drive folder inventory / what to encrypt: `kb-projects/projects/mac-setup/drive-backup-encryption.md`
-- Restore overview: `kb-projects/projects/mac-setup/restore.md` § Offsite
+- Drive folder inventory / what to encrypt: `kb-projects/projects/mac-setup/backup/drive-encryption.md`
+- Restore overview: `kb-projects/projects/mac-setup/restore/` § Offsite
 - Weekly hook (commented): `zsh-env/tasks/crontab/weekly.sh`

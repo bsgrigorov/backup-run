@@ -50,7 +50,7 @@ backup-run --backup-all --skip-git   # sync only (no git)
 
 **Offsite (Google Drive):** `./scripts/offsite-gdrive.sh` — encrypted zip of the current working tree (~2 MB; excludes `.git` and `dotfiles/.ssh`) into  
 `~/Library/CloudStorage/GoogleDrive-…/My Drive/Documents/Backup`. Add `--verify` to decrypt and check after writing.  
-Encrypt/decrypt recipes: [docs/ENCRYPTION.md](docs/ENCRYPTION.md). Inventory / what to encrypt: `kb-projects/projects/mac-setup/drive-backup-encryption.md`.
+Encrypt/decrypt recipes: [docs/ENCRYPTION.md](docs/ENCRYPTION.md). Inventory / what to encrypt: `kb-projects/projects/mac-setup/backup/drive-encryption.md`.
 
 ## Extras (not in Python sync)
 
