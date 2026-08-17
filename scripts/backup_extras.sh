@@ -55,6 +55,42 @@ write_if_cmd "pipx apps" "pipx list --short" "$PKG/pipx_list.txt"
 write_if_cmd "uv tools" "uv tool list" "$PKG/uv_tools_list.txt"
 write_if_cmd "fnm node versions" "fnm list" "$PKG/fnm_list.txt"
 
+FNM_DEFAULT_BIN="$HOME/.local/share/fnm/aliases/default/bin"
+if [[ -x "$FNM_DEFAULT_BIN/npm" ]]; then
+    if PATH="$FNM_DEFAULT_BIN:$PATH" npm ls -g --depth 0 >"$PKG/fnm_npm_globals.txt" 2>/dev/null \
+        && [[ -s "$PKG/fnm_npm_globals.txt" ]]; then
+        log_ok "fnm npm globals → fnm_npm_globals.txt"
+    else
+        rm -f "$PKG/fnm_npm_globals.txt"
+        log_skip "fnm npm globals (empty output)"
+    fi
+fi
+
+if [[ -d "$HOME/go/bin" ]]; then
+    if ls -1 "$HOME/go/bin" >"$PKG/go_bin_list.txt" 2>/dev/null && [[ -s "$PKG/go_bin_list.txt" ]]; then
+        log_ok "go/bin → go_bin_list.txt"
+    else
+        rm -f "$PKG/go_bin_list.txt"
+        log_skip "go/bin (empty)"
+    fi
+fi
+
+if [[ -d "$HOME/.local/bin" ]]; then
+    : >"$PKG/local_bin_list.txt"
+    for entry in "$HOME/.local/bin"/*; do
+        [[ -e "$entry" ]] || continue
+        rp=$(readlink -f "$entry" 2>/dev/null || printf '%s' "$entry")
+        case "$rp" in *pipx*|*uv/tools*) continue ;; esac
+        printf '%s -> %s\n' "$(basename "$entry")" "$rp" >>"$PKG/local_bin_list.txt"
+    done
+    if [[ -s "$PKG/local_bin_list.txt" ]]; then
+        log_ok "local bin (non-pipx/uv) → local_bin_list.txt"
+    else
+        rm -f "$PKG/local_bin_list.txt"
+        log_skip "local bin (only pipx/uv entries)"
+    fi
+fi
+
 echo "🔄 backup_extras: Cursor + VS Code extensions"
 if command -v cursor >/dev/null 2>&1; then
     cursor --list-extensions --show-versions >"$CURSOR/extensions.list" 2>/dev/null || true
