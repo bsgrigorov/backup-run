@@ -1,6 +1,7 @@
 # Offsite encryption / decryption
 
-Recipe used by `scripts/offsite-gdrive.sh` and for any single-file secrets dropped into Google Drive `Documents/Backup`.
+Legacy recipe used by `scripts/offsite-gdrive.sh`. New single-file encryption
+defaults to authenticated age passphrase encryption via the `encrypt` skill.
 
 ## Method
 
@@ -17,7 +18,10 @@ openssl enc -d -aes-256-cbc -pbkdf2      # decrypt
 
 **Caveats:** confidentiality only — no authenticity (tampering isn’t detected). Passphrase lives in **1Password**, never next to the `.enc` in Drive. Prefer interactive prompt, `op read`, or `-pass fd:3` (what the script uses); never `-pass pass:…` (shows up in `ps`).
 
-Optional upgrade later: [`age`](https://github.com/FiloSottile/age) for authenticated encryption. Not required.
+Do not use this recipe for new ad hoc files. Use
+[`age`](https://github.com/FiloSottile/age) (`age -p`, `.age`) with double-entry
+passphrase confirmation and decrypt/compare verification. Existing `.enc` files
+stay OpenSSL until deliberately migrated.
 
 ## Repo snapshot (script)
 
@@ -62,7 +66,8 @@ openssl enc -d -aes-256-cbc -pbkdf2 -in FILE.enc -out "$work/FILE"
 
 ## Related
 
-- Skill (agent): `openssl-encrypt` — files, folders/zips, short text
+- Skill (agent): `encrypt` — age passphrase for new files; OpenSSL commands here are for the legacy script and `.enc` restore
+- Optional CLI wrapper: `zsh-env/scripts/bin/crypt` — this script's `.enc` = `crypt -m openssl-10k`
 - Drive folder inventory / what to encrypt: `kb-projects/projects/mac-setup/backup/drive-encryption.md`
 - Restore overview: `kb-projects/projects/mac-setup/restore/` § Offsite
 - Weekly hook (commented): `zsh-env/tasks/crontab/weekly.sh`
