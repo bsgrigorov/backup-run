@@ -1,31 +1,29 @@
 # Offsite encryption / decryption
 
-Legacy recipe used by `scripts/offsite-gdrive.sh`. New single-file encryption
-defaults to authenticated age passphrase encryption via the `encrypt` skill.
+`scripts/offsite-gdrive.sh` writes authenticated age passphrase ciphertext
+(`.age`). Same recipe as the `encrypt` skill and `crypt` CLI.
 
 ## Method
 
 ```text
-openssl enc -aes-256-cbc -pbkdf2 -salt   # encrypt
-openssl enc -d -aes-256-cbc -pbkdf2      # decrypt
+age -p -o FILE.age FILE     # encrypt (passphrase + confirmation)
+age -d -o FILE FILE.age     # decrypt
 ```
 
 | Piece | Why |
 |---|---|
-| AES-256-CBC | Standard cipher; fine for personal file encryption |
-| `-pbkdf2` | Required — without it OpenSSL’s old key derivation is weak |
-| `-salt` | Unique salt per file (default with `enc`) |
+| age (ChaCha20-Poly1305) | Authenticated: wrong passphrase or tampered blob fails loudly |
+| Passphrase | Lives in **1Password** only, never next to the `.age` in Drive |
 
-**Caveats:** confidentiality only — no authenticity (tampering isn’t detected). Passphrase lives in **1Password**, never next to the `.enc` in Drive. Prefer interactive prompt, `op read`, or `-pass fd:3` (what the script uses); never `-pass pass:…` (shows up in `ps`).
+Prefer interactive prompt, `op read`, or the script’s hidden GUI prompt. Never
+put the passphrase in argv (`ps`).
 
-Do not use this recipe for new ad hoc files. Use
-[`age`](https://github.com/FiloSottile/age) (`age -p`, `.age`) with double-entry
-passphrase confirmation and decrypt/compare verification. Existing `.enc` files
-stay OpenSSL until deliberately migrated.
+Legacy `.enc` (OpenSSL AES-256-CBC + PBKDF2) is restore-only via
+`crypt -d -m openssl-10k`. Do not create new `.enc`. Never rename `.enc` → `.age`.
 
 ## Repo snapshot (script)
 
-Fixed name: `git-bsgrigorov-backup.zip.enc` — each run **overwrites**. Destination:
+Fixed name: `git-bsgrigorov-backup.zip.age` — each run **overwrites**. Destination:
 
 `~/Library/CloudStorage/GoogleDrive-…/My Drive/Documents/Backup/`
 
@@ -40,34 +38,36 @@ Manual decrypt:
 
 ```bash
 work="$(mktemp -d "${TMPDIR:-/tmp}/backup-restore.XXXXXX")"
-openssl enc -d -aes-256-cbc -pbkdf2 \
-  -in ~/Library/CloudStorage/GoogleDrive-b.s.grigorov@gmail.com/"My Drive"/Documents/Backup/git-bsgrigorov-backup.zip.enc \
-  -out "$work/backup.zip"
+age -d -o "$work/backup.zip" \
+  ~/Library/CloudStorage/GoogleDrive-b.s.grigorov@gmail.com/"My Drive"/Documents/Backup/git-bsgrigorov-backup.zip.age
 unzip "$work/backup.zip" -d "$work"
 # inspect, then remove "$work"
 ```
 
 ## Verify
 
-After encrypt (plaintext still present): decrypt to a temp file and `cmp -s` against the original before deleting plaintext.
+After encrypt (plaintext still present): decrypt to a temp file and `cmp -s`
+against the original before deleting plaintext.
 
-Re-check an existing `.enc` (no plaintext): decrypt to a temp dir, confirm openssl exit 0 and expected type (`%PDF` header, non-empty text, or `unzip -t` for zip). Do not print secret contents. Wrong passphrase → FAIL.
+Re-check an existing `.age` (no plaintext): decrypt to a temp dir, confirm age
+exit 0 and expected type (`%PDF` header, non-empty text, or `unzip -t` for zip).
+Do not print secret contents. Wrong passphrase → FAIL.
 
 ```bash
 # Encrypt
-openssl enc -aes-256-cbc -pbkdf2 -salt -in FILE -out FILE.enc
+age -p -o FILE.age FILE
 # Decrypt once to verify, then delete plaintext from Drive (and Drive trash)
 
 # Decrypt to a throwaway dir
 work="$(mktemp -d "${TMPDIR:-/tmp}/drive-decrypt.XXXXXX")"
-openssl enc -d -aes-256-cbc -pbkdf2 -in FILE.enc -out "$work/FILE"
+age -d -o "$work/FILE" FILE.age
 # inspect, then remove "$work"
 ```
 
 ## Related
 
-- Skill (agent): `encrypt` — age passphrase for new files; OpenSSL commands here are for the legacy script and `.enc` restore
-- Optional CLI wrapper: `zsh-env/scripts/bin/crypt` — this script's `.enc` = `crypt -m openssl-10k`
-- Drive folder inventory / what to encrypt: `kb-projects/projects/mac-setup/backup/drive-encryption.md`
+- Skill (agent): `encrypt` — age passphrase for files; `crypt` for OpenSSL leftovers
+- CLI: `zsh-env/scripts/bin/crypt` (default age; `-m openssl-10k` for old `.enc`)
+- Drive folder inventory: `kb-projects/projects/mac-setup/backup/drive-encryption.md`
 - Restore overview: `kb-projects/projects/mac-setup/restore/` § Offsite
 - Weekly hook (commented): `zsh-env/tasks/crontab/weekly.sh`

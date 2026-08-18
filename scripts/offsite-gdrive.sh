@@ -15,7 +15,7 @@
 #
 # Restore into a throwaway temp dir:
 #   work="$(mktemp -d "${TMPDIR:-/tmp}/backup-restore.XXXXXX")"
-#   openssl enc -d -aes-256-cbc -pbkdf2 -in git-bsgrigorov-backup.zip.enc -out "$work/backup.zip"
+#   age -d -o "$work/backup.zip" git-bsgrigorov-backup.zip.age
 #   unzip "$work/backup.zip" -d "$work"    # inspect, then remove "$work"
 # Or run with --verify to prove the artifact and clean up automatically.
 set -euo pipefail
@@ -74,10 +74,15 @@ if [[ ! -d "$GDRIVE_BACKUP" ]]; then
   echo "Is Drive for desktop signed in and syncing?" >&2
   exit 1
 fi
+if ! command -v age >/dev/null 2>&1; then
+  echo "ERROR: age not found (brew install age)" >&2
+  exit 1
+fi
 
 # Name mirrors the private GitHub repo (bsgrigorov/backup) so it's obvious in Drive.
 PLAIN="${TMPDIR:-/tmp}/${NAME}.zip"
-OUT="$GDRIVE_BACKUP/${NAME}.zip.enc"
+OUT="$GDRIVE_BACKUP/${NAME}.zip.age"
+LEGACY_ENC="$GDRIVE_BACKUP/${NAME}.zip.enc"
 
 echo "==> offsite-gdrive"
 echo "    source: $BACKUP_ROOT"
@@ -152,12 +157,17 @@ ls -lh "$PLAIN"
 
 PASS="$(resolve_passphrase)"
 echo "==> encrypting → $OUT"
-# Pass passphrase via fd so it never appears in `ps`
-openssl enc -aes-256-cbc -pbkdf2 -salt \
-  -in "$PLAIN" \
-  -out "$OUT" \
-  -pass "fd:3" \
-  3<<<"$PASS"
+# age -p needs a pty; script(1) provides one. Redirect: script echoes the pipe.
+if ! printf '%s\n%s\n' "$PASS" "$PASS" | script -q /dev/null age -p -o "$OUT" "$PLAIN" >/dev/null 2>&1; then
+  echo "ERROR: age encrypt failed" >&2
+  unset PASS
+  exit 1
+fi
+[[ -s "$OUT" ]] || { echo "ERROR: age produced empty output" >&2; unset PASS; exit 1; }
+if [[ -f "$LEGACY_ENC" ]]; then
+  rm -f "$LEGACY_ENC"
+  echo "    removed leftover ${NAME}.zip.enc"
+fi
 
 if [[ "$KEEP_PLAIN" -eq 0 ]]; then
   rm -f "$PLAIN"
@@ -169,10 +179,18 @@ ls -lh "$OUT"
 
 if [[ "$VERIFY" -eq 1 ]]; then
   WORK="$(mktemp -d "${TMPDIR:-/tmp}/backup-offsite-verify.XXXXXX")"
-  trap 'rm -rf "$WORK"' EXIT
+  cleanup_verify() {
+    [[ -d "$WORK" ]] || return 0
+    find "$WORK" -type f -delete
+    find "$WORK" -depth -type d -empty -delete 2>/dev/null || true
+  }
+  trap cleanup_verify EXIT
   echo "==> verifying → $WORK (auto-removed)"
   DEC="$WORK/artifact"
-  openssl enc -d -aes-256-cbc -pbkdf2 -in "$OUT" -out "$DEC" -pass "fd:3" 3<<<"$PASS"
+  if ! printf '%s\n' "$PASS" | script -q /dev/null age -d -o "$DEC" "$OUT" >/dev/null 2>&1; then
+    echo "ERROR: age decrypt failed" >&2
+    exit 1
+  fi
   unzip -t -q "$DEC"
   unzip -q "$DEC" -d "$WORK/tree"
   # Prove real files came back, not just a well-formed zip.
@@ -188,5 +206,5 @@ echo "==> done"
 echo "    verify next time: $(basename "$0") --verify"
 echo "    manual restore into a throwaway dir:"
 echo "      work=\"\$(mktemp -d \"\${TMPDIR:-/tmp}/backup-restore.XXXXXX\")\""
-echo "      openssl enc -d -aes-256-cbc -pbkdf2 -in \"$OUT\" -out \"\$work/backup.zip\""
+echo "      age -d -o \"\$work/backup.zip\" \"$OUT\""
 echo "      unzip \"\$work/backup.zip\" -d \"\$work\"    # inspect, then remove \"\$work\""
