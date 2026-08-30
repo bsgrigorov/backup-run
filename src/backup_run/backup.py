@@ -2,9 +2,24 @@ import json
 import multiprocessing as mp
 import os
 import shutil
+import stat
 from pathlib import Path
 from shlex import quote
 from shutil import copyfile, copytree
+
+
+def _ignore_unreadable(directory, names):
+    """Skip sockets/FIFOs — copytree cannot duplicate them (e.g. iTerm daemon)."""
+    skip = []
+    for name in names:
+        path = os.path.join(directory, name)
+        try:
+            mode = os.lstat(path).st_mode
+        except OSError:
+            continue
+        if stat.S_ISSOCK(mode) or stat.S_ISFIFO(mode):
+            skip.append(name)
+    return skip
 
 from colorama import Fore
 
@@ -139,7 +154,13 @@ def backup_configs(backup_path, dry_run: bool = False, skip=False):
         if os.path.isdir(config_path):
             if refuse_oversized_dir(config_path, size_limit, label=target):
                 continue
-            copytree(config_path, dest, symlinks=True, dirs_exist_ok=True)
+            copytree(
+                config_path,
+                dest,
+                symlinks=True,
+                dirs_exist_ok=True,
+                ignore=_ignore_unreadable,
+            )
         elif os.path.isfile(config_path):
             parent_dir = Path(dest).parent
             safe_mkdir(parent_dir)

@@ -44,6 +44,8 @@ Data lands in `~/dev/repos/zzz/backup/` (`bsgrigorov/backup`, private GitHub). T
 | `~/.claude.json` | `dotfiles/` | Claude Code local state (profile metadata, MCP entries, project usage). Private repo only — contains email/org IDs, not API tokens. |
 | `~/.codex/config.toml` | `dotfiles/.codex/` | Model/plugins. **Not** `auth.json` (gitignored if present). |
 | `~/.conductor/settings.toml` | `dotfiles/.conductor/` | Tiny non-secret defaults. |
+| `~/.config/opencode/opencode.jsonc`, `tui.json`, `package.json` | `dotfiles/.config/opencode/` | LiteLLM provider + models via `{env:LITELLM_API_KEY}`. **Not** `node_modules/` or lockfiles. |
+| `~/.pi/agent/models.json`, `settings.json` | `dotfiles/.pi/agent/` | LiteLLM custom provider + defaults. **Not** `auth.json`, `sessions/`, or `skills/` (symlinks to `~/.agents/skills` → `kb/agents`). |
 
 ### App settings (plist + Application Support)
 
@@ -51,11 +53,11 @@ Data lands in `~/dev/repos/zzz/backup/` (`bsgrigorov/backup`, private GitHub). T
 |-----|-------------|
 | Cursor — settings, keybindings, snippets, extensions.list | `configs/cursor/` |
 | VS Code — settings, keybindings, snippets, extensions.list | `configs/vscode/` |
-| iTerm2 — plist + Application Support | `configs/iterm2/` |
+| iTerm2 — custom prefs folder | `configs/iterm2/com.googlecode.iterm2.plist` (iTerm PrefsCustomFolder). Do **not** copy `~/Library/Preferences/…` or Application Support (daemon sockets / runtime only). |
 | Terminal.app | `configs/terminal_plist` |
 | Alfred (both plists) | `configs/alfred/` |
 | BetterTouchTool — plist + app support | `configs/bettertouchtool/` |
-| Raycast | `configs/raycast/` (plist + extensions.list) |
+| Raycast | `configs/raycast/` (plist + extensions.list + quicklinks + `.rayconfig`) |
 | Stats | `configs/stats/` |
 | BetterDisplay | `configs/betterdisplay/` |
 | Time Out | `configs/timeout/` |
@@ -76,8 +78,9 @@ Plist + `extensions.list` are **not** a full restore. Hotkeys, aliases, snippets
 
 | Method | What | Notes |
 |--------|------|-------|
-| **Export Settings & Data** | `.rayconfig` (encrypted, passphrase) | Run in Raycast; save under `backup/custom_backups/raycast/` (or GDrive). Jan 2026 export is stale — re-export. |
-| **Scheduled Export** (Pro) | Auto `.rayconfig` to a folder | Settings → Advanced → Export; point at `custom_backups/raycast/` or a sync folder |
+| **Quicklinks JSON** | `configs/raycast/quicklinks.json` | Edit in git; Raycast → **Import Quicklinks**. Re-import is safe (duplicates skipped). |
+| **Export Settings & Data** | `.rayconfig` (encrypted, passphrase) | Run in Raycast; save under `backup/configs/raycast/` (or GDrive). Jan 2026 export is stale — re-export. |
+| **Scheduled Export** (Pro) | Auto `.rayconfig` to a folder | Settings → Advanced → Export; point at `configs/raycast/` |
 | **Cloud Sync** (Pro) | Cross-device | Settings → Cloud Sync; still keep a `.rayconfig` backup |
 | **Do not** | Copy `~/.config/raycast/extensions` (415MB) or `raycast-enc.sqlite` | Store installs + encrypted DB; size cap would refuse anyway |
 
@@ -157,6 +160,7 @@ These are synced to `dotfiles/` for restore on disk but **gitignored**:
 |--------|--------------|
 | `~/.ssh/` (incl. private keys) | **Not copied.** Removed from manifest. Live keys → 1Password SSH Key; optional Drive `ssh-id_ed25519.age`. Gitignore still blocks `dotfiles/.ssh` if anything lands there. |
 | `~/.codex/auth.json` | Codex credentials |
+| `~/.pi/agent/auth.json` | Pi OAuth/API keys |
 | `~/.aws/credentials` | Long-lived keys if present |
 
 Public SSH (`config`, `known_hosts`, `*.pub`) are easy to recreate; private keys stay out of this repo entirely.

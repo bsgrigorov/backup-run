@@ -126,7 +126,7 @@ else
 fi
 
 # Raycast: extension titles only (415MB install tree + encrypted sqlite stay local).
-# Full restore = Raycast "Export Settings & Data" → custom_backups/raycast/*.rayconfig
+# Full restore = Raycast "Export Settings & Data" → configs/raycast/*.rayconfig
 # and/or Raycast Pro Cloud Sync — plist alone is not enough.
 if run_tool_python -m backup_run.extras.raycast extensions-list "$RAYCAST/extensions.list"; then
     if [[ -s "$RAYCAST/extensions.list" ]]; then

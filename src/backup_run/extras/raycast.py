@@ -11,7 +11,7 @@ def write_extensions_list(out_path: Path) -> int:
     ext = Path.home() / ".config" / "raycast" / "extensions"
     lines = [
         "# Raycast store extensions (title — author)",
-        "# Full settings/hotkeys/snippets: Export Settings & Data → .rayconfig",
+        "# Full settings/hotkeys/snippets: Export Settings & Data → configs/raycast/*.rayconfig",
     ]
     if ext.is_dir():
         for d in sorted(ext.iterdir()):
