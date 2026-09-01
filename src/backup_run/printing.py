@@ -1,7 +1,6 @@
 import os
 import sys
 
-import inquirer
 from colorama import Fore, Style
 
 from .constants import ProjInfo
@@ -143,6 +142,8 @@ def prompt_yes_no(message, color, invert=False) -> bool:
     """
     Print question and return True or False depending on user selection from list.
     """
+    import inquirer
+
     questions = [
         inquirer.List(
             "choice",

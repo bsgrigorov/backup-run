@@ -97,32 +97,31 @@ def backup_dotfiles(backup_dest_path, dry_run=False, home_path=os.path.expanduse
         # print(f"Creating: {os.path.split(dest_path)[0]}")
         safe_mkdir(os.path.split(dest_path)[0])
 
-    with mp.Pool(mp.cpu_count()):
-        print_blue_bold("Backing up dotfolders...")
-        size_limit = max_copy_dir_bytes(get_config())
-        for x in dotfolders_mp_in:
-            p = mp.Process(
-                target=copy_dir_if_valid,
-                args=(
-                    x[0],
-                    x[1],
-                    size_limit,
-                ),
-            )
-            p.start()
-            p.join()
+    print_blue_bold("Backing up dotfolders...")
+    size_limit = max_copy_dir_bytes(get_config())
+    for x in dotfolders_mp_in:
+        p = mp.Process(
+            target=copy_dir_if_valid,
+            args=(
+                x[0],
+                x[1],
+                size_limit,
+            ),
+        )
+        p.start()
+        p.join()
 
-        print_blue_bold("Backing up dotfiles...")
-        for x in dotfiles_mp_in:
-            p = mp.Process(
-                target=copyfile_with_exception_handler,
-                args=(
-                    x[0],
-                    x[1],
-                ),
-            )
-            p.start()
-            p.join()
+    print_blue_bold("Backing up dotfiles...")
+    for x in dotfiles_mp_in:
+        p = mp.Process(
+            target=copyfile_with_exception_handler,
+            args=(
+                x[0],
+                x[1],
+            ),
+        )
+        p.start()
+        p.join()
 
 
 def backup_configs(backup_path, dry_run: bool = False, skip=False):

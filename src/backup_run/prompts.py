@@ -1,7 +1,5 @@
 import os
 
-import inquirer
-
 from .config import *
 from .git_wrapper import git_set_remote, move_git_repo
 from .printing import *
@@ -51,6 +49,8 @@ def add_to_config_prompt():
     Prompt sequence for a user to add a path to the config file under
     either the dot or config sections.
     """
+    import inquirer
+
     add_prompt = [
         inquirer.List(
             "choice",
@@ -122,6 +122,8 @@ def remove_from_config_prompt():
     2-layer selection screen. First screen is for choosing dot or
     config, and then next selection is for the specific path.
     """
+    import inquirer
+
     # Get section to display.
     section_prompt = [
         inquirer.List(
@@ -161,6 +163,8 @@ def main_menu_prompt():
     """
     Prompt user for an action.
     """
+    import inquirer
+
     questions = [
         inquirer.List(
             "choice",
