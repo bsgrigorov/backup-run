@@ -123,7 +123,6 @@ fi
 unset PASS
 cursor_auth_cleanup_stage
 trap - EXIT
-cursor_auth_assert_git_safe "$CURSOR_AUTH_DIR"
 
 if [[ ! -f "$CURSOR_AUTH_DIR/README.md" ]]; then
   cat >"$CURSOR_AUTH_DIR/README.md" <<EOF
@@ -136,6 +135,10 @@ if [[ ! -f "$CURSOR_AUTH_DIR/README.md" ]]; then
 EOF
 fi
 
+cursor_auth_assert_git_safe "$CURSOR_AUTH_DIR"
+
 echo "==> done"
 echo "    git:   $OUT_AGE"
-[[ "$WRITE_DRIVE" -eq 1 ]] && echo "    drive: $GDRIVE_BACKUP/${DRIVE_NAME}-${BACKUP_TARGET}.tar.age"
+if [[ "$WRITE_DRIVE" -eq 1 ]]; then
+  echo "    drive: $GDRIVE_BACKUP/${DRIVE_NAME}-${BACKUP_TARGET}.tar.age"
+fi

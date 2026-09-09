@@ -115,17 +115,25 @@ cursor_auth_stage_bundle() {
     echo "    include: cli-config.slices.json"
   fi
 
-  [[ -f "$CURSOR_CLI_AUTH" ]] && cp -p "$CURSOR_CLI_AUTH" "$stage/cli/auth.json" && echo "    include: cli/auth.json"
-  [[ -f "$CURSOR_SDK_AUTH" ]] && mkdir -p "$stage/sdk" && cp -p "$CURSOR_SDK_AUTH" "$stage/sdk/auth.json" && echo "    include: sdk/auth.json"
+  if [[ -f "$CURSOR_CLI_AUTH" ]]; then
+    cp -p "$CURSOR_CLI_AUTH" "$stage/cli/auth.json"
+    echo "    include: cli/auth.json"
+  fi
+  if [[ -f "$CURSOR_SDK_AUTH" ]]; then
+    mkdir -p "$stage/sdk"
+    cp -p "$CURSOR_SDK_AUTH" "$stage/sdk/auth.json"
+    echo "    include: sdk/auth.json"
+  fi
 }
 
 cursor_auth_verify_tar() {
   local tar_file="$1"
-  tar -tf "$tar_file" | grep -q '^manifest\.json$' || {
+  # BSD tar lists members as ./manifest.json
+  tar -tf "$tar_file" | grep -qE '(^|^\./)manifest\.json$' || {
     echo "ERROR: manifest.json missing in bundle" >&2
     return 1
   }
-  tar -tf "$tar_file" | grep -q 'sqlite/itemtable\.json$' || {
+  tar -tf "$tar_file" | grep -qE 'sqlite/itemtable\.json$' || {
     echo "ERROR: sqlite/itemtable.json missing in bundle" >&2
     return 1
   }
