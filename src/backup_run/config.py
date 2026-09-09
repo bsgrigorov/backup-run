@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import stat
 import sys
 from functools import lru_cache
@@ -9,7 +10,10 @@ from pathlib import Path
 from .compatibility import *
 from .constants import ProjInfo
 from .printing import *
-from .utils import strip_home
+from .utils import expand_to_abs_path, strip_home
+
+_LOCAL_SH = Path.home() / ".zsh" / "local.sh"
+_BACKUP_TARGET_RE = re.compile(r"^export\s+BACKUP_TARGET=(.+)$")
 
 
 def _manifest_candidates() -> list[Path]:
@@ -44,6 +48,38 @@ def get_config() -> dict:
             print_red_bold(f"ERROR: Invalid syntax in {config_path}")
             sys.exit(1)
     return config
+
+
+@lru_cache(maxsize=1)
+def get_backup_target() -> str:
+    """Machine slug from env or ~/.zsh/local.sh (same pattern as zsh-env)."""
+    target = environ.get("BACKUP_TARGET", "").strip()
+    if target:
+        return target
+    if _LOCAL_SH.is_file():
+        for raw in _LOCAL_SH.read_text().splitlines():
+            line = raw.strip()
+            if not line or line.startswith("#"):
+                continue
+            match = _BACKUP_TARGET_RE.match(line)
+            if match:
+                value = match.group(1).strip().strip('"').strip("'")
+                if value:
+                    return value
+    print_red_bold(
+        "ERROR: BACKUP_TARGET not set. Add to ~/.zsh/local.sh (see zsh-env shell/core/local.sh.example)."
+    )
+    sys.exit(1)
+
+
+@lru_cache(maxsize=1)
+def get_backup_repo_path() -> str:
+    return expand_to_abs_path(get_config()["backup_path"])
+
+
+@lru_cache(maxsize=1)
+def get_machine_backup_path() -> str:
+    return str(Path(get_backup_repo_path()) / get_backup_target())
 
 
 def write_config(config) -> None:

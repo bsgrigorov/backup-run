@@ -28,12 +28,21 @@ run_tool_python() {
     return 1
 }
 
+# Machine snapshot root: <backup-repo>/<BACKUP_TARGET>/ (from ~/.zsh/local.sh).
 resolve_backup_root() {
     if [[ -n "${BACKUP_ROOT:-}" ]]; then
         printf '%s' "$BACKUP_ROOT"
         return 0
     fi
-    run_tool_python -c 'from backup_run.config import get_config; print(get_config()["backup_path"])'
+    run_tool_python -c 'from backup_run.config import get_machine_backup_path; print(get_machine_backup_path())'
+}
+
+resolve_backup_repo_root() {
+    if [[ -n "${BACKUP_REPO_ROOT:-}" ]]; then
+        printf '%s' "$BACKUP_REPO_ROOT"
+        return 0
+    fi
+    run_tool_python -c 'from backup_run.config import get_backup_repo_path; print(get_backup_repo_path())'
 }
 
 GREEN='\033[0;32m'

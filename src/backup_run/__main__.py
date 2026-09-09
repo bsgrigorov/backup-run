@@ -15,7 +15,10 @@ from .config import (
     add_dot_path_to_config,
     check_insecure_config_permissions,
     delete_config_file,
+    get_backup_repo_path,
+    get_backup_target,
     get_config,
+    get_machine_backup_path,
     safe_create_config,
     write_config,
 )
@@ -212,8 +215,7 @@ def cli(
         elif delete_config:
             delete_config_file()
         elif destroy_backup:
-            backup_home_path = expand_to_abs_path(get_config()["backup_path"])
-            destroy_backup_dir(backup_home_path)
+            destroy_backup_dir(get_backup_repo_path())
         elif edit:
             edit_config()
         elif add_dot:
@@ -240,11 +242,15 @@ def cli(
     elif not has_cli_arg:
         path_update_prompt(backup_config)
 
-    # Create backup directory and do git setup
-    backup_home_path = expand_to_abs_path(get_config()["backup_path"])
-    mkdir_warn_overwrite(backup_home_path)
-    repo, new_git_repo_created = safe_git_init(backup_home_path)
-    create_gitignore(backup_home_path, "root-gitignore")
+    # Git repo at backup root; snapshot data under <repo>/<BACKUP_TARGET>/
+    backup_repo_path = get_backup_repo_path()
+    machine_backup_path = get_machine_backup_path()
+    print_path_blue("Backup target:", get_backup_target())
+    print_path_blue("Machine backup path:", machine_backup_path)
+    mkdir_warn_overwrite(backup_repo_path)
+    mkdir_warn_overwrite(machine_backup_path)
+    repo, new_git_repo_created = safe_git_init(backup_repo_path)
+    create_gitignore(backup_repo_path, "root-gitignore")
 
     # Prompt user for remote URL if needed
     if new_git_repo_created and not remote:
@@ -254,12 +260,12 @@ def cli(
     if remote:
         git_set_remote(repo, remote)
 
-    dotfiles_path = os.path.join(backup_home_path, "dotfiles")
+    dotfiles_path = os.path.join(machine_backup_path, "dotfiles")
     create_gitignore(dotfiles_path, "dotfiles-gitignore")
 
-    configs_path = os.path.join(backup_home_path, "configs")
-    packages_path = os.path.join(backup_home_path, "packages")
-    fonts_path = os.path.join(backup_home_path, "fonts")
+    configs_path = os.path.join(machine_backup_path, "configs")
+    packages_path = os.path.join(machine_backup_path, "packages")
+    fonts_path = os.path.join(machine_backup_path, "fonts")
 
     # Command line options
     if skip_prompt:

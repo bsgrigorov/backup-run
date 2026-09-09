@@ -1,13 +1,15 @@
 # backup-run
 
-Git-integrated macOS backup orchestrator. Fork of [shallow-backup](https://github.com/alichtman/shallow-backup), trimmed for a single-machine workflow.
+Git-integrated macOS backup orchestrator. Fork of [shallow-backup](https://github.com/alichtman/shallow-backup). One data repo, per-machine snapshot dirs.
 
 ## Layout
 
 | Path | Role |
 |------|------|
 | `~/dev/repos/zzz/backup-run` | This repo — tool, manifest, shell extras |
-| `~/dev/repos/zzz/backup` | Data repo — dotfiles, configs, packages, `manual/` (private git) |
+| `~/dev/repos/zzz/backup` | Data repo — `mac-consensys/`, `macbook-pro-2023/`, … plus shared `manual/` (private git) |
+
+Machine slug: `BACKUP_TARGET` in `~/.zsh/local.sh` (same file as zsh-env). Snapshots land in `backup/<BACKUP_TARGET>/` with the usual `dotfiles/`, `configs/`, `packages/` layout.
 
 ## Install
 
