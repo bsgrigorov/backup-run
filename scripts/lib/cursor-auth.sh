@@ -32,11 +32,11 @@ cursor_auth_require_quit() {
 cursor_auth_init_paths() {
   : "${MACHINE_ROOT:?}"
   : "${BACKUP_RUN_ROOT:?}"
-  CURSOR_AUTH_DIR="$MACHINE_ROOT/cursor-auth"
-  STAGE_ROOT="$CURSOR_AUTH_DIR/.stage"
+  SECRETS_DIR="$MACHINE_ROOT/secrets"
+  STAGE_ROOT="$SECRETS_DIR/.stage-cursor-auth"
   STAGE_WORK="$STAGE_ROOT/workspace"
   PLAIN_TAR="$STAGE_ROOT/bundle.tar"
-  OUT_AGE="$CURSOR_AUTH_DIR/cursor-auth-bundle.tar.age"
+  OUT_AGE="$SECRETS_DIR/cursor-auth-bundle.tar.age"
   OUT_AGE_TMP="$STAGE_ROOT/cursor-auth-bundle.tar.age.tmp"
   IO_PY="${BACKUP_RUN_ROOT}/scripts/lib/cursor-auth-io.py"
 }
@@ -49,22 +49,7 @@ cursor_auth_cleanup_stage() {
 }
 
 cursor_auth_assert_git_safe() {
-  local dir="$1" f base
-  if [[ -d "$dir/.stage" ]]; then
-    echo "ERROR: staging dir still present: $dir/.stage" >&2
-    return 1
-  fi
-  while IFS= read -r -d '' f; do
-    base="$(basename "$f")"
-    case "$base" in
-      README.md) ;;
-      *.age) ;;
-      *)
-        echo "ERROR: plaintext under cursor-auth/: $f" >&2
-        return 1
-        ;;
-    esac
-  done < <(find "$dir" -type f -print0)
+  secrets_assert_git_safe "$1"
 }
 
 cursor_auth_export_keychain() {

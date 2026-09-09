@@ -42,7 +42,7 @@ backup-run --backup-all --skip-git   # sync only (no git)
 ```
 
 Plain `backup` runs: sync → `scripts/backup_extras.sh` → git commit/push.  
-`--secrets` and `--cursor-auth` are opt-in only; each commits its own subdir under `<BACKUP_TARGET>/`.
+`--secrets` and `--cursor-auth` are opt-in only; both write encrypted `*.age` files under `<BACKUP_TARGET>/secrets/`.
 
 ## Config
 

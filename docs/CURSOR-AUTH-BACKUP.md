@@ -20,8 +20,8 @@ Deterministic backup/restore for **Cursor login state only** (not chat history o
 
 | | Path |
 |---|------|
-| Git artifact | `backup/<BACKUP_TARGET>/cursor-auth/cursor-auth-bundle.tar.age` |
-| Staging (gitignored) | `backup/<BACKUP_TARGET>/cursor-auth/.stage/` |
+| Git artifact | `backup/<BACKUP_TARGET>/secrets/cursor-auth-bundle.tar.age` |
+| Staging (gitignored) | `backup/<BACKUP_TARGET>/secrets/.stage-cursor-auth/` |
 | Drive (optional) | `…/Backup/cursor-auth-<BACKUP_TARGET>.tar.age` |
 
 Passphrase: same as secrets — `op://Personal/drive-backup/password` (default when `op` is available).
@@ -46,7 +46,7 @@ Plain `backup` never runs secrets or cursor-auth. Combine flags for both bundles
 ```bash
 ./scripts/cursor-auth-restore.sh --confirm
 # Or explicit bundle:
-./scripts/cursor-auth-restore.sh --confirm ~/dev/repos/zzz/backup/macbook-pro-2023/cursor-auth/cursor-auth-bundle.tar.age
+./scripts/cursor-auth-restore.sh --confirm ~/dev/repos/zzz/backup/macbook-pro-2023/secrets/cursor-auth-bundle.tar.age
 ```
 
 Then open Cursor and verify: Settings account, Agent chat, MCP connections, GitHub PR extension.
@@ -58,13 +58,13 @@ Then open Cursor and verify: Settings account, Agent chat, MCP connections, GitH
 | Personal | `macbook-pro-2023` | |
 | Work | `mac-consensys` | Warn: Consensys IT may prohibit SSO token export |
 
-Each machine has its own bundle under its `<BACKUP_TARGET>/cursor-auth/`. Restoring a bundle from machine A onto machine B defers Okta until tokens expire.
+Each machine has its own bundle under its `<BACKUP_TARGET>/secrets/`. Restoring a bundle from machine A onto machine B defers Okta until tokens expire.
 
 ## Verify checklist
 
 **After backup:**
-- [ ] `cursor-auth-bundle.tar.age` exists under `<target>/cursor-auth/`
-- [ ] No files under `cursor-auth/.stage/`
+- [ ] `cursor-auth-bundle.tar.age` exists under `<target>/secrets/`
+- [ ] No files under `secrets/.stage-cursor-auth/`
 - [ ] Script printed `verified: cursor-auth bundle structure`
 
 **After restore:**

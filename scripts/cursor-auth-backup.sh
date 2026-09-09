@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Cursor IDE/CLI auth → age-encrypted tarball in backup repo (not chat history).
 #
-# Plaintext only under <machine>/cursor-auth/.stage/ (gitignored).
-# Committed: <machine>/cursor-auth/cursor-auth-bundle.tar.age
+# Plaintext only under <machine>/secrets/.stage-cursor-auth/ (gitignored).
+# Committed: <machine>/secrets/cursor-auth-bundle.tar.age
 #
 # Usage:
 #   ./scripts/cursor-auth-backup.sh --dry-run
@@ -31,7 +31,7 @@ usage() {
 Usage: $(basename "$0") [--verify] [--no-verify] [--dry-run] [--no-drive] [-h]
 
 Export Cursor auth (SQLite rows + Keychain + CLI slices), tar, age-encrypt:
-  <backup-repo>/<BACKUP_TARGET>/cursor-auth/cursor-auth-bundle.tar.age
+  <backup-repo>/<BACKUP_TARGET>/secrets/cursor-auth-bundle.tar.age
 
   Drive (optional): $GDRIVE_BACKUP/${DRIVE_NAME}-\${BACKUP_TARGET}.tar.age
 
@@ -84,7 +84,7 @@ if [[ "$WRITE_DRIVE" -eq 1 && ! -d "$GDRIVE_BACKUP" ]]; then
 fi
 
 cursor_auth_require_quit
-mkdir -p "$CURSOR_AUTH_DIR"
+mkdir -p "$SECRETS_DIR"
 cursor_auth_cleanup_stage
 mkdir -p "$STAGE_ROOT" "$STAGE_WORK"
 trap cursor_auth_cleanup_stage EXIT
@@ -124,18 +124,7 @@ unset PASS
 cursor_auth_cleanup_stage
 trap - EXIT
 
-if [[ ! -f "$CURSOR_AUTH_DIR/README.md" ]]; then
-  cat >"$CURSOR_AUTH_DIR/README.md" <<EOF
-# Cursor auth bundle (do not add plaintext here)
-
-- Committed: \`cursor-auth-bundle.tar.age\` only (see docs/CURSOR-AUTH-BACKUP.md).
-- Staging \`.stage/\` is gitignored.
-- Machine: \`${BACKUP_TARGET}\`
-- Restore: \`backup-run/scripts/cursor-auth-restore.sh\`
-EOF
-fi
-
-cursor_auth_assert_git_safe "$CURSOR_AUTH_DIR"
+cursor_auth_assert_git_safe "$SECRETS_DIR"
 
 echo "==> done"
 echo "    git:   $OUT_AGE"

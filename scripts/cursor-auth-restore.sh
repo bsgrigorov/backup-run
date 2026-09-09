@@ -23,7 +23,7 @@ usage() {
 Usage: $(basename "$0") --confirm [bundle.tar.age]
 
 Restore Cursor IDE/CLI auth from age bundle. Default bundle:
-  <backup>/<BACKUP_TARGET>/cursor-auth/cursor-auth-bundle.tar.age
+  <backup>/<BACKUP_TARGET>/secrets/cursor-auth-bundle.tar.age
 
 Quit Cursor before running. Overwrites existing Cursor auth on this Mac.
 Docs: docs/CURSOR-AUTH-BACKUP.md

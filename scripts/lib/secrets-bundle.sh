@@ -336,14 +336,17 @@ secrets_assert_git_safe() {
   local dir="$1"
   local f base
 
-  if [[ -d "$dir/.stage" ]]; then
-    if find "$dir/.stage" -type f -print -quit | grep -q .; then
-      echo "ERROR: staging dir not cleaned: $dir/.stage" >&2
+  local stage_dir
+  for stage_dir in "$dir/.stage" "$dir/.stage-cursor-auth"; do
+    if [[ -d "$stage_dir" ]]; then
+      if find "$stage_dir" -type f -print -quit | grep -q .; then
+        echo "ERROR: staging dir not cleaned: $stage_dir" >&2
+        return 1
+      fi
+      echo "ERROR: staging dir still present: $stage_dir" >&2
       return 1
     fi
-    echo "ERROR: staging dir still present: $dir/.stage" >&2
-    return 1
-  fi
+  done
 
   while IFS= read -r -d '' f; do
     base="$(basename "$f")"

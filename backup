@@ -20,7 +20,7 @@ Usage: $(basename "$0") [-s] [--secrets] [--cursor-auth] [-h]
   (no args)      sync dotfiles/configs/packages + extras + git commit/push
   -s             include sudo-only steps in extras (sfltool; prompts if needed)
   --secrets      secrets bundle only → <target>/secrets/bundle.zip.age (+ Drive)
-  --cursor-auth  cursor auth only → <target>/cursor-auth/cursor-auth-bundle.tar.age
+  --cursor-auth  cursor auth only → <target>/secrets/cursor-auth-bundle.tar.age
   -h             this help
 
 Secrets and cursor-auth never run on plain \`backup\`. Combine flags for both:
@@ -102,7 +102,7 @@ if [[ "$BACKUP_SECRETS" -eq 1 || "$BACKUP_CURSOR_AUTH" -eq 1 ]]; then
     if [[ "$BACKUP_CURSOR_AUTH" -eq 1 ]]; then
         echo "==> backup: cursor-auth only (target=$BACKUP_TARGET)"
         "$ROOT/scripts/cursor-auth-backup.sh" --verify
-        git_paths+=("$BACKUP_ROOT/cursor-auth")
+        git_paths+=("$BACKUP_ROOT/secrets")
         if [[ -n "$commit_label" ]]; then
             commit_label="${commit_label}+cursor-auth"
         else
