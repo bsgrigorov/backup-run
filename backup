@@ -32,8 +32,18 @@ done
 
 export BACKUP_SUDO
 
-if ! command -v backup-run >/dev/null 2>&1; then
-    echo "backup: backup-run not found — pipx install -e $ROOT (or: uv tool install -e $ROOT)" >&2
+BACKUP_RUN_BIN="${BACKUP_RUN_BIN:-}"
+if [[ -z "$BACKUP_RUN_BIN" ]]; then
+    if command -v backup-run >/dev/null 2>&1; then
+        BACKUP_RUN_BIN="$(command -v backup-run)"
+    elif [[ -x "${HOME}/.local/bin/backup-run" ]]; then
+        BACKUP_RUN_BIN="${HOME}/.local/bin/backup-run"
+    elif [[ -x "${ROOT}/.venv/bin/backup-run" ]]; then
+        BACKUP_RUN_BIN="${ROOT}/.venv/bin/backup-run"
+    fi
+fi
+if [[ -z "$BACKUP_RUN_BIN" ]]; then
+    echo "backup: backup-run not found — pipx install --force $ROOT" >&2
     exit 1
 fi
 
@@ -51,8 +61,14 @@ BACKUP_TARGET="${BACKUP_TARGET:-$(
 )}"
 export BACKUP_REPO_ROOT BACKUP_ROOT BACKUP_TARGET
 
-echo "==> backup: sync (backup-run)"
-backup-run --backup-all --no-splash --no-new-backup-path-prompt --skip-git
+if [[ "$BACKUP_ROOT" == "$BACKUP_REPO_ROOT" ]]; then
+    echo "backup: BACKUP_ROOT equals repo root — set BACKUP_TARGET in ~/.zsh/local.sh" >&2
+    exit 1
+fi
+
+echo "==> backup: target=$BACKUP_TARGET path=$BACKUP_ROOT"
+echo "==> backup: sync ($BACKUP_RUN_BIN)"
+"$BACKUP_RUN_BIN" --backup-all --no-splash --no-new-backup-path-prompt --skip-git
 
 echo "==> backup: extras"
 "$ROOT/scripts/backup_extras.sh"

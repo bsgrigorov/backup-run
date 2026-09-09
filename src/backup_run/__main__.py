@@ -347,8 +347,8 @@ def cli(
             elif action.startswith("remove"):
                 remove_from_config_prompt()
         elif action == "destroy":
-            if prompt_yes_no(f"Erase backup directory: {backup_home_path}?", Fore.RED):
-                destroy_backup_dir(backup_home_path)
+            if prompt_yes_no(f"Erase backup directory: {backup_repo_path}?", Fore.RED):
+                destroy_backup_dir(backup_repo_path)
             else:
                 print_red_bold("Exiting to prevent accidental deletion of backup directory.")
 

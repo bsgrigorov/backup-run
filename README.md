@@ -16,11 +16,11 @@ Machine slug: `BACKUP_TARGET` in `~/.zsh/local.sh` (same file as zsh-env). Snaps
 **Runtime (recommended):**
 
 ```bash
-pipx install -e ~/dev/repos/zzz/backup-run
+pipx install --force ~/dev/repos/zzz/backup-run
 chmod +x ~/dev/repos/zzz/backup-run/backup
 ```
 
-After dependency changes: `pipx reinstall backup-run`.
+After pulling backup-run changes: `pipx install --force ~/dev/repos/zzz/backup-run`.
 
 **Development:**
 
