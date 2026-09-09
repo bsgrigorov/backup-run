@@ -64,6 +64,17 @@ age -d -o "$work/FILE" FILE.age
 # inspect, then remove "$work"
 ```
 
+## Secrets bundle
+
+Gap-fill secrets (shell, SSH, npmrc, agent-fleet `secrets/`, filtered AWS credentials):
+
+```bash
+./scripts/offsite-secrets-gdrive.sh --dry-run
+./scripts/offsite-secrets-gdrive.sh --with-gpg --verify
+```
+
+Writes `mac-secrets.zip.age` to the same Drive folder. Restore: `backup/manual/secrets.md`.
+
 ## Related
 
 - Skill (agent): `encrypt` — age passphrase for files; `crypt` for OpenSSL leftovers
