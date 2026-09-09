@@ -7,7 +7,7 @@ backup        # daily — no sudo-only steps
 backup -s     # weekly — includes sfltool login items (sudo prompts if needed)
 ```
 
-Data lands in `~/dev/repos/zzz/backup/` (`bsgrigorov/backup`, private GitHub). The `./backup` script syncs, runs extras, then one commit+push.
+Data lands in `~/dev/repos/zzz/backup/<BACKUP_TARGET>/` (`bsgrigorov/backup`, private GitHub). `BACKUP_TARGET` comes from `~/.zsh/local.sh` (`macbook-pro-2023`, `mac-consensys`, …). Shared docs stay at `backup/manual/`. The `./backup` script syncs, runs extras, then one commit+push.
 
 `config_mapping` and `dotfiles` are **allowlists**. Directory copies are also capped by `max_copy_dir_mb` (default 50) so a mistaken large path cannot dump caches into the repo.
 
@@ -19,7 +19,7 @@ Data lands in `~/dev/repos/zzz/backup/` (`bsgrigorov/backup`, private GitHub). T
 
 | Source | Backup path |
 |--------|-------------|
-| `~/.zshrc`, `.zshenv`, `.zprofile`, `.bashrc`, `.profile` | `dotfiles/` |
+| `~/.zshrc`, `.zshenv`, `.zprofile`, `.bashrc`, `.profile` | `<target>/dotfiles/` |
 | `~/.gitconfig`, `.gitignore_global`, `.inputrc`, `.viminfo` | `dotfiles/` |
 | `~/.npmrc` | **Not backed up** — contains registry tokens |
 | `~/.yarnrc.yml` | `dotfiles/` |
@@ -29,7 +29,8 @@ Data lands in `~/dev/repos/zzz/backup/` (`bsgrigorov/backup`, private GitHub). T
 | Source | Backup path | Notes |
 |--------|-------------|-------|
 | `~/.aws/config` | `dotfiles/.aws/` | **Not** `credentials` |
-| `~/.kube/config` | `dotfiles/.kube/` | Cluster access; private repo only |
+| `~/.kube/config` | `dotfiles/.kube/` | Cluster access; private repo only. Prune work contexts on personal Mac after restore. |
+| `~/.kubech/kubech` | — | **Not backed up** — install via `zsh-env/init.sh` or `git clone` (see zsh-env README). Required for `kt`. |
 | `~/.docker/config.json` | `dotfiles/.docker/` | Uses macOS keychain for auth |
 | `~/.cloudflared/config.yml` | `dotfiles/.cloudflared/` | |
 | `~/.colima/_templates/default.yaml` | `dotfiles/.colima/` | |
@@ -57,7 +58,7 @@ Data lands in `~/dev/repos/zzz/backup/` (`bsgrigorov/backup`, private GitHub). T
 | iTerm2 — custom prefs folder | `configs/iterm2/com.googlecode.iterm2.plist` (iTerm PrefsCustomFolder). Do **not** copy `~/Library/Preferences/…` or Application Support (daemon sockets / runtime only). |
 | Terminal.app | `configs/terminal_plist` |
 | Alfred (both plists) | `configs/alfred/` |
-| BetterTouchTool — plist + app support | `configs/bettertouchtool/` |
+| BetterTouchTool — plist + app support (SQLite `btt_data_store*`) | `configs/bettertouchtool/` |
 | Raycast | `configs/raycast/` (plist + extensions.list + quicklinks + `.rayconfig`) |
 | Stats | `configs/stats/` |
 | BetterDisplay | `configs/betterdisplay/` |
@@ -86,6 +87,17 @@ Plist + `extensions.list` are **not** a full restore. Hotkeys, aliases, snippets
 | **Do not** | Copy `~/.config/raycast/extensions` (415MB) or `raycast-enc.sqlite` | Store installs + encrypted DB; size cap would refuse anyway |
 
 Hooks, rules, skills → **`kb/agents`** (separate repo).
+
+### BetterTouchTool restore (important)
+
+Triggers and gestures live in SQLite (`btt_data_store*`), not in the plist. A `.bttpreset` export is a snapshot only.
+
+| Method | What | Notes |
+|--------|------|-------|
+| **Git backup (preferred)** | `configs/bettertouchtool/bettertouchtool_plist` + `app_support/btt_data_store*` + `btt_user_variables.plist` | Quit BTT; back up destination; copy plist + data store; relaunch. |
+| **License** | `app_support/bettertouchtool.bttlicense` or Drive `Documents/Backup/BetterTouchTool.bttlicense` | Per-machine key; also in 1Password. |
+| **Do not** | Drive `Documents/Backup/Legacy/*.bttpreset` | Stale archive (last export Sep 2025; live config continued in SQLite). |
+| **Fallback** | Fresh `.bttpreset` export from source Mac before wipe | Only if git backup has no `btt_data_store*`. |
 
 ### Package manifests (Python sync + extras)
 
