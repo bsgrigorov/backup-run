@@ -326,9 +326,7 @@ secrets_encrypt_zip_to_age() {
 
 secrets_cleanup_stage() {
   [[ -d "${STAGE_ROOT:-}" ]] || return 0
-  find "$STAGE_ROOT" -type f -delete 2>/dev/null || true
-  find "$STAGE_ROOT" -depth -type d -empty -delete 2>/dev/null || true
-  rmdir "$STAGE_ROOT" 2>/dev/null || true
+  rm -rf "$STAGE_ROOT"
 }
 
 # Fail if plaintext or staging debris remains under secrets/ (only README.md + *.age allowed).
