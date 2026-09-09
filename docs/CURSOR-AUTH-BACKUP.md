@@ -37,7 +37,7 @@ backup --cursor-auth                    # cursor auth only (+ git commit/push); 
 ./scripts/cursor-auth-backup.sh --no-drive --verify
 ```
 
-`backup --cursor-auth` skips sync/extras. For full snapshot + secrets use `backup --secrets`. For all three: `backup` then `backup --secrets` and `backup --cursor-auth` separately.
+Plain `backup` never runs secrets or cursor-auth. Combine flags for both bundles without sync: `backup --secrets --cursor-auth`.
 
 ## Restore
 

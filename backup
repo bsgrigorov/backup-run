@@ -2,9 +2,10 @@
 # Unified backup entrypoint (sync + extras + one git commit/push).
 #
 # Usage: backup [-s] [--secrets] [--cursor-auth]
-#   -s             sudo-only steps (sfltool login items; prompts for password if needed)
-#   --secrets      also run offsite-secrets.sh (encrypted bundle)
-#   --cursor-auth  cursor-auth only (no sync/extras; quit Cursor first)
+#   (no args)      sync + extras + git (no secrets, no cursor-auth)
+#   -s             include sudo sfltool step in extras
+#   --secrets      secrets bundle only (no sync)
+#   --cursor-auth  cursor auth only (no sync; quit Cursor first)
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -16,15 +17,46 @@ usage() {
     cat <<EOF
 Usage: $(basename "$0") [-s] [--secrets] [--cursor-auth] [-h]
 
-  (no args)      sync dotfiles/configs/packages + extras; skip sudo-only steps
-  -s             include sudo-only steps (sfltool; will prompt for password if needed)
-  --secrets      also encrypt secrets bundle → <target>/secrets/bundle.zip.age (+ Drive)
-  --cursor-auth  cursor-auth only → <target>/cursor-auth/cursor-auth-bundle.tar.age (no sync)
+  (no args)      sync dotfiles/configs/packages + extras + git commit/push
+  -s             include sudo-only steps in extras (sfltool; prompts if needed)
+  --secrets      secrets bundle only → <target>/secrets/bundle.zip.age (+ Drive)
+  --cursor-auth  cursor auth only → <target>/cursor-auth/cursor-auth-bundle.tar.age
   -h             this help
+
+Secrets and cursor-auth never run on plain \`backup\`. Combine flags for both:
+  backup --secrets --cursor-auth
 
 Tool repo: $ROOT
 Data repo: \$BACKUP_ROOT (from manifest/backup-run.conf)
 EOF
+}
+
+backup_git_publish() {
+    local msg="$1"
+    shift
+    local path
+
+    if ! git -C "$BACKUP_REPO_ROOT" rev-parse --git-dir >/dev/null 2>&1; then
+        return 0
+    fi
+    if [[ $# -eq 0 ]]; then
+        git -C "$BACKUP_REPO_ROOT" add -A
+    else
+        for path in "$@"; do
+            git -C "$BACKUP_REPO_ROOT" add "$path"
+        done
+    fi
+    if ! git -C "$BACKUP_REPO_ROOT" diff --cached --quiet; then
+        echo "==> backup: commit ($msg)"
+        git -C "$BACKUP_REPO_ROOT" commit -m "backup: $msg $BACKUP_TARGET"
+    fi
+    if git -C "$BACKUP_REPO_ROOT" rev-parse '@{u}' >/dev/null 2>&1; then
+        ahead="$(git -C "$BACKUP_REPO_ROOT" rev-list --count '@{u}..HEAD' 2>/dev/null || echo 0)"
+        if [[ "$ahead" != "0" ]]; then
+            echo "==> backup: push"
+            git -C "$BACKUP_REPO_ROOT" push
+        fi
+    fi
 }
 
 BACKUP_SUDO=0
@@ -56,24 +88,30 @@ if [[ "$BACKUP_ROOT" == "$BACKUP_REPO_ROOT" ]]; then
     exit 1
 fi
 
-if [[ "$BACKUP_CURSOR_AUTH" -eq 1 && "$BACKUP_SECRETS" -eq 0 ]]; then
-    echo "==> backup: cursor-auth only (target=$BACKUP_TARGET)"
-    "$ROOT/scripts/cursor-auth-backup.sh" --verify
-    if git -C "$BACKUP_REPO_ROOT" rev-parse --git-dir >/dev/null 2>&1; then
-        git -C "$BACKUP_REPO_ROOT" add "$BACKUP_ROOT/cursor-auth"
-        if ! git -C "$BACKUP_REPO_ROOT" diff --cached --quiet; then
-            echo "==> backup: commit cursor-auth ($BACKUP_TARGET)"
-            git -C "$BACKUP_REPO_ROOT" commit -m "backup: cursor-auth $BACKUP_TARGET"
-        fi
-        if git -C "$BACKUP_REPO_ROOT" rev-parse '@{u}' >/dev/null 2>&1; then
-            ahead="$(git -C "$BACKUP_REPO_ROOT" rev-list --count '@{u}..HEAD' 2>/dev/null || echo 0)"
-            if [[ "$ahead" != "0" ]]; then
-                echo "==> backup: push"
-                git -C "$BACKUP_REPO_ROOT" push
-            fi
+if [[ "$BACKUP_SECRETS" -eq 1 || "$BACKUP_CURSOR_AUTH" -eq 1 ]]; then
+    commit_label=""
+    git_paths=()
+
+    if [[ "$BACKUP_SECRETS" -eq 1 ]]; then
+        echo "==> backup: secrets only (target=$BACKUP_TARGET)"
+        "$ROOT/scripts/offsite-secrets.sh" --verify
+        git_paths+=("$BACKUP_ROOT/secrets")
+        commit_label="secrets"
+    fi
+
+    if [[ "$BACKUP_CURSOR_AUTH" -eq 1 ]]; then
+        echo "==> backup: cursor-auth only (target=$BACKUP_TARGET)"
+        "$ROOT/scripts/cursor-auth-backup.sh" --verify
+        git_paths+=("$BACKUP_ROOT/cursor-auth")
+        if [[ -n "$commit_label" ]]; then
+            commit_label="${commit_label}+cursor-auth"
+        else
+            commit_label="cursor-auth"
         fi
     fi
-    echo "==> backup: done → $BACKUP_ROOT/cursor-auth"
+
+    backup_git_publish "$commit_label" "${git_paths[@]}"
+    echo "==> backup: done → ${git_paths[*]}"
     exit 0
 fi
 
@@ -99,29 +137,6 @@ echo "==> backup: sync ($BACKUP_RUN_BIN)"
 echo "==> backup: extras"
 "$ROOT/scripts/backup_extras.sh"
 
-if [[ "$BACKUP_SECRETS" -eq 1 ]]; then
-    echo "==> backup: secrets"
-    "$ROOT/scripts/offsite-secrets.sh" --verify
-fi
-
-if [[ "$BACKUP_CURSOR_AUTH" -eq 1 ]]; then
-    echo "==> backup: cursor-auth"
-    "$ROOT/scripts/cursor-auth-backup.sh" --verify
-fi
-
-if git -C "$BACKUP_REPO_ROOT" rev-parse --git-dir >/dev/null 2>&1; then
-    git -C "$BACKUP_REPO_ROOT" add -A
-    if ! git -C "$BACKUP_REPO_ROOT" diff --cached --quiet; then
-        echo "==> backup: commit ($BACKUP_TARGET)"
-        git -C "$BACKUP_REPO_ROOT" commit -m "backup: snapshot $BACKUP_TARGET"
-    fi
-    if git -C "$BACKUP_REPO_ROOT" rev-parse '@{u}' >/dev/null 2>&1; then
-        ahead="$(git -C "$BACKUP_REPO_ROOT" rev-list --count '@{u}..HEAD' 2>/dev/null || echo 0)"
-        if [[ "$ahead" != "0" ]]; then
-            echo "==> backup: push"
-            git -C "$BACKUP_REPO_ROOT" push
-        fi
-    fi
-fi
+backup_git_publish "snapshot"
 
 echo "==> backup: done → $BACKUP_ROOT (repo: $BACKUP_REPO_ROOT, target: $BACKUP_TARGET)"
