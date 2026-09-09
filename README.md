@@ -35,7 +35,8 @@ uv run backup-run --version
 ```bash
 backup          # alias → ~/dev/repos/zzz/backup-run/backup
 backup -s       # include sudo sfltool login-item dump (prompts if needed)
-backup --secrets   # also encrypt secrets bundle (passphrase prompt; not in daily/weekly cron)
+backup --secrets      # also encrypt secrets bundle (not in daily/weekly cron)
+backup --cursor-auth  # also encrypt Cursor login/MCP auth (quit Cursor first)
 backup-run --backup-all --skip-git   # sync only (no git)
 ```
 

@@ -81,6 +81,17 @@ backup --secrets                              # sync + extras + secrets + git co
 
 Passphrase: `op://Personal/drive-backup/password` (default when `op` is available). Restore: `backup/manual/secrets.md`.
 
+## Cursor auth bundle
+
+IDE/CLI login and MCP OAuth tokens (not chat history):
+
+```bash
+backup --cursor-auth
+./scripts/cursor-auth-restore.sh --confirm
+```
+
+See [CURSOR-AUTH-BACKUP.md](CURSOR-AUTH-BACKUP.md).
+
 ## Related
 
 - Skill (agent): `encrypt` — age passphrase for files; `crypt` for OpenSSL leftovers
