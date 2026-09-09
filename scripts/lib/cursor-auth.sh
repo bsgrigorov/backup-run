@@ -17,12 +17,14 @@ CURSOR_KEYCHAIN_SERVICES=(
 )
 
 cursor_auth_cursor_running() {
-  pgrep -qx Cursor 2>/dev/null || pgrep -f "[/]Cursor\\.app" >/dev/null 2>&1
+  # Main app binary only — not crashpad_handler, not macOS CursorUIViewService.xpc
+  pgrep -f "/Applications/Cursor.app/Contents/MacOS/Cursor" >/dev/null 2>&1
 }
 
 cursor_auth_require_quit() {
   if cursor_auth_cursor_running; then
     echo "ERROR: quit Cursor fully before cursor-auth backup/restore" >&2
+    echo "       (Cursor → Quit; ignore CursorUIViewService / crashpad_handler in pgrep)" >&2
     exit 1
   fi
 }
