@@ -35,10 +35,12 @@ uv run backup-run --version
 ```bash
 backup          # alias → ~/dev/repos/zzz/backup-run/backup
 backup -s       # include sudo sfltool login-item dump (prompts if needed)
+backup --secrets   # also encrypt secrets bundle (passphrase prompt; not in daily/weekly cron)
 backup-run --backup-all --skip-git   # sync only (no git)
 ```
 
-`backup` runs: sync → `scripts/backup_extras.sh` → one git commit/push in the data repo.
+`backup` runs: sync → `scripts/backup_extras.sh` → one git commit/push in the data repo.  
+Secrets (`offsite-secrets.sh`) run only with `--secrets`, not on plain `backup`. Each Mac commits under its own `BACKUP_TARGET/` dir; passphrase defaults to `op://Personal/drive-backup/password` when `op` is available.
 
 ## Config
 

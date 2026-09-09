@@ -11,7 +11,7 @@
 #   ./scripts/offsite-gdrive.sh --verify        # then decrypt+check in a temp dir
 #   ./scripts/offsite-gdrive.sh --dry-run
 #   BACKUP_OFFSITE_PASSPHRASE='…' ./scripts/offsite-gdrive.sh   # non-interactive
-#   BACKUP_OFFSITE_OP_REF='op://Personal/…/password' ./scripts/offsite-gdrive.sh
+#   BACKUP_OFFSITE_OP_REF='op://Personal/drive-backup/password' ./scripts/offsite-gdrive.sh
 #
 # Restore into a throwaway temp dir:
 #   work="$(mktemp -d "${TMPDIR:-/tmp}/backup-restore.XXXXXX")"
@@ -110,13 +110,20 @@ resolve_passphrase() {
     printf '%s' "$BACKUP_OFFSITE_PASSPHRASE"
     return 0
   fi
-  if [[ -n "${BACKUP_OFFSITE_OP_REF:-}" ]]; then
-    if ! command -v op >/dev/null 2>&1; then
-      echo "ERROR: op CLI required for BACKUP_OFFSITE_OP_REF" >&2
-      exit 1
+  local op_ref="${BACKUP_OFFSITE_OP_REF:-op://Personal/drive-backup/password}"
+  local op_explicit=0
+  [[ -n "${BACKUP_OFFSITE_OP_REF:-}" ]] && op_explicit=1
+  local pass=""
+  if command -v op >/dev/null 2>&1; then
+    if pass="$(op read "$op_ref" 2>/dev/null)" && [[ -n "$pass" ]]; then
+      printf '%s' "$pass"
+      return 0
     fi
-    op read "$BACKUP_OFFSITE_OP_REF"
-    return 0
+    if [[ "$op_explicit" -eq 1 ]]; then
+      echo "WARN: op read failed for BACKUP_OFFSITE_OP_REF — using passphrase prompt" >&2
+    fi
+  elif [[ "$op_explicit" -eq 1 ]]; then
+    echo "WARN: op not found — using passphrase prompt" >&2
   fi
 
   local p1 p2

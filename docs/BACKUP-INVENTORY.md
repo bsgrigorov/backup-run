@@ -188,13 +188,13 @@ Public SSH (`config`, `known_hosts`, `*.pub`) are easy to recreate; private keys
 | Cursor/Claude rules, skills, hooks | `kb/agents` |
 | MCP tokens / API keys in `mcp.json` | Prefer env/1P — current file has none; do not commit secrets |
 | `~/.zsh_history` | Too sensitive (tokens in commands); not in manifest |
-| `~/.npmrc`, `~/.netrc` | `mac-secrets.zip.age` on Drive — **procedure:** `backup/manual/secrets.md` |
-| GPG secret keys | 1Password + `mac-secrets.zip.age` (`--with-gpg`) — **procedure:** `backup/manual/gpg.md`, `secrets.md` |
-| SSH private keys | 1Password SSH Key + Drive `.age` + `mac-secrets.zip.age` — **procedure:** `backup/manual/ssh.md`, `secrets.md` |
-| `zsh-env/shell/secret/` | `mac-secrets.zip.age` (+ 1Password) — `offsite-secrets-gdrive.sh` |
-| Agent-fleet `secrets/` trees | `mac-secrets.zip.age` (gitignored under `personal/agent/`) |
-| `~/.codex/auth.json`, `~/.pi/agent/auth.json` | `mac-secrets.zip.age` |
-| `~/.aws/credentials` | `mac-secrets.zip.age` (personal/SynKube profiles only; allowlist in `backup-run/manifest/secrets-offsite-allowlist.conf`) |
+| `~/.npmrc`, `~/.netrc` | `<target>/secrets/bundle.zip.age` (+ Drive) — **procedure:** `backup/manual/secrets.md` |
+| GPG secret keys | 1Password + secrets bundle (`backup --secrets --with-gpg`) — `backup/manual/gpg.md`, `secrets.md` |
+| SSH private keys | 1Password SSH Key + Drive `.age` + secrets bundle — `backup/manual/ssh.md`, `secrets.md` |
+| `zsh-env/shell/secret/` | secrets bundle (+ 1Password) — `backup --secrets` |
+| Agent-fleet `secrets/` trees | secrets bundle (gitignored under `personal/agent/`) |
+| `~/.codex/auth.json`, `~/.pi/agent/auth.json` | secrets bundle |
+| `~/.aws/credentials` | secrets bundle (filtered; allowlist `manifest/secrets-allowlist-<BACKUP_TARGET>.conf`) |
 | Google Drive `backup/` folder | Manual sync for large blobs |
 | All source repos | GitHub (`git push`) |
 | 1Password vault | Native sync |
@@ -207,7 +207,7 @@ Public SSH (`config`, `known_hosts`, `*.pub`) are easy to recreate; private keys
 2. Push `kb/agents`, `zsh-env`, and any active project repos
 3. Copy `zsh-env/shell/secret/` to 1Password
 4. Confirm SSH + GPG backups per `backup/manual/ssh.md` and `backup/manual/gpg.md` (1P items present; Drive `.age` refreshed)
-5. Run `backup-run/scripts/offsite-secrets-gdrive.sh --with-gpg --verify` → `mac-secrets.zip.age` (see `backup/manual/secrets.md`)
+5. Run `backup --secrets` (or `offsite-secrets.sh --with-gpg`) on each Mac — see `backup/manual/secrets.md`
 6. Verify 1Password fully synced
 7. Optional: sync Google Drive `Documents/Backup` folder
 

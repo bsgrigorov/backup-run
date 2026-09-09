@@ -31,7 +31,7 @@ Fixed name: `git-bsgrigorov-backup.zip.age` — each run **overwrites**. Destina
 ./scripts/offsite-gdrive.sh --dry-run
 ./scripts/offsite-gdrive.sh --verify    # write, decrypt, check, clean temp
 
-# Passphrase: prompt, or BACKUP_OFFSITE_PASSPHRASE, or BACKUP_OFFSITE_OP_REF='op://…/password'
+# Passphrase: prompt, or BACKUP_OFFSITE_PASSPHRASE, or BACKUP_OFFSITE_OP_REF='op://Personal/drive-backup/password'
 ```
 
 Manual decrypt:
@@ -66,14 +66,20 @@ age -d -o "$work/FILE" FILE.age
 
 ## Secrets bundle
 
-Gap-fill secrets (shell, SSH, npmrc, agent-fleet `secrets/`, filtered AWS credentials):
+Gap-fill secrets (shell, SSH, npmrc, agent-fleet `secrets/`, filtered AWS credentials). Per machine (`BACKUP_TARGET`):
+
+| Output | Path |
+|--------|------|
+| Git (committed) | `backup/<BACKUP_TARGET>/secrets/bundle.zip.age` |
+| Drive (optional) | `…/Backup/mac-secrets-<BACKUP_TARGET>.zip.age` |
 
 ```bash
-./scripts/offsite-secrets-gdrive.sh --dry-run
-./scripts/offsite-secrets-gdrive.sh --with-gpg --verify
+backup --secrets                              # sync + extras + secrets + git commit
+./scripts/offsite-secrets.sh --dry-run
+./scripts/offsite-secrets.sh --with-gpg       # includes GPG export
 ```
 
-Writes `mac-secrets.zip.age` to the same Drive folder. Restore: `backup/manual/secrets.md`.
+Passphrase: `op://Personal/drive-backup/password` (default when `op` is available). Restore: `backup/manual/secrets.md`.
 
 ## Related
 

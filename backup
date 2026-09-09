@@ -1,20 +1,24 @@
 #!/usr/bin/env bash
 # Unified backup entrypoint (sync + extras + one git commit/push).
 #
-# Usage: backup [-s]
-#   -s  sudo-only steps (sfltool login items; prompts for password if needed).
+# Usage: backup [-s] [--secrets]
+#   -s          sudo-only steps (sfltool login items; prompts for password if needed)
+#   --secrets   also run offsite-secrets.sh (encrypted bundle; prompts for passphrase)
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PATH="/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin:${HOME}/.local/bin:${PATH:-}"
+# shellcheck source=scripts/_common.sh
+source "$ROOT/scripts/_common.sh"
 
 usage() {
     cat <<EOF
-Usage: $(basename "$0") [-s] [-h]
+Usage: $(basename "$0") [-s] [--secrets] [-h]
 
-  (no args)  sync dotfiles/configs/packages + extras; skip sudo-only steps
-  -s         include sudo-only steps (sfltool; will prompt for password if needed)
-  -h         this help
+  (no args)   sync dotfiles/configs/packages + extras; skip sudo-only steps
+  -s          include sudo-only steps (sfltool; will prompt for password if needed)
+  --secrets   also encrypt secrets bundle → <target>/secrets/bundle.zip.age (+ Drive)
+  -h          this help
 
 Tool repo: $ROOT
 Data repo: \$BACKUP_ROOT (from manifest/backup-run.conf)
@@ -22,11 +26,17 @@ EOF
 }
 
 BACKUP_SUDO=0
-while getopts "sh" opt; do
-    case "$opt" in
-        s) BACKUP_SUDO=1 ;;
-        h) usage; exit 0 ;;
-        *) usage >&2; exit 1 ;;
+BACKUP_SECRETS=0
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -s) BACKUP_SUDO=1; shift ;;
+        --secrets) BACKUP_SECRETS=1; shift ;;
+        -h | --help) usage; exit 0 ;;
+        *)
+            echo "backup: unknown option: $1" >&2
+            usage >&2
+            exit 1
+            ;;
     esac
 done
 
@@ -47,18 +57,9 @@ if [[ -z "$BACKUP_RUN_BIN" ]]; then
     exit 1
 fi
 
-BACKUP_REPO_ROOT="${BACKUP_REPO_ROOT:-$(
-    python3 -c 'from backup_run.config import get_backup_repo_path; print(get_backup_repo_path())' 2>/dev/null \
-        || echo "$HOME/dev/repos/zzz/backup"
-)}"
-BACKUP_ROOT="${BACKUP_ROOT:-$(
-    python3 -c 'from backup_run.config import get_machine_backup_path; print(get_machine_backup_path())' 2>/dev/null \
-        || echo "$BACKUP_REPO_ROOT/macbook-pro-2023"
-)}"
-BACKUP_TARGET="${BACKUP_TARGET:-$(
-    python3 -c 'from backup_run.config import get_backup_target; print(get_backup_target())' 2>/dev/null \
-        || echo "macbook-pro-2023"
-)}"
+BACKUP_REPO_ROOT="${BACKUP_REPO_ROOT:-$(resolve_backup_repo_root)}"
+BACKUP_ROOT="${BACKUP_ROOT:-$(resolve_backup_root)}"
+BACKUP_TARGET="${BACKUP_TARGET:-$(run_tool_python -c 'from backup_run.config import get_backup_target; print(get_backup_target())')}"
 export BACKUP_REPO_ROOT BACKUP_ROOT BACKUP_TARGET
 
 if [[ "$BACKUP_ROOT" == "$BACKUP_REPO_ROOT" ]]; then
@@ -72,6 +73,11 @@ echo "==> backup: sync ($BACKUP_RUN_BIN)"
 
 echo "==> backup: extras"
 "$ROOT/scripts/backup_extras.sh"
+
+if [[ "$BACKUP_SECRETS" -eq 1 ]]; then
+    echo "==> backup: secrets"
+    "$ROOT/scripts/offsite-secrets.sh" --verify
+fi
 
 if git -C "$BACKUP_REPO_ROOT" rev-parse --git-dir >/dev/null 2>&1; then
     git -C "$BACKUP_REPO_ROOT" add -A
