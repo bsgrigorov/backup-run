@@ -4,7 +4,7 @@
 # Usage: backup [-s] [--secrets] [--cursor-auth]
 #   -s             sudo-only steps (sfltool login items; prompts for password if needed)
 #   --secrets      also run offsite-secrets.sh (encrypted bundle)
-#   --cursor-auth  also run cursor-auth-backup.sh (Cursor login/MCP tokens)
+#   --cursor-auth  cursor-auth only (no sync/extras; quit Cursor first)
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -19,7 +19,7 @@ Usage: $(basename "$0") [-s] [--secrets] [--cursor-auth] [-h]
   (no args)      sync dotfiles/configs/packages + extras; skip sudo-only steps
   -s             include sudo-only steps (sfltool; will prompt for password if needed)
   --secrets      also encrypt secrets bundle → <target>/secrets/bundle.zip.age (+ Drive)
-  --cursor-auth  also encrypt Cursor auth → <target>/cursor-auth/cursor-auth-bundle.tar.age
+  --cursor-auth  cursor-auth only → <target>/cursor-auth/cursor-auth-bundle.tar.age (no sync)
   -h             this help
 
 Tool repo: $ROOT
@@ -46,6 +46,37 @@ done
 
 export BACKUP_SUDO
 
+BACKUP_REPO_ROOT="${BACKUP_REPO_ROOT:-$(resolve_backup_repo_root)}"
+BACKUP_ROOT="${BACKUP_ROOT:-$(resolve_backup_root)}"
+BACKUP_TARGET="${BACKUP_TARGET:-$(run_tool_python -c 'from backup_run.config import get_backup_target; print(get_backup_target())')}"
+export BACKUP_REPO_ROOT BACKUP_ROOT BACKUP_TARGET
+
+if [[ "$BACKUP_ROOT" == "$BACKUP_REPO_ROOT" ]]; then
+    echo "backup: BACKUP_ROOT equals repo root — set BACKUP_TARGET in ~/.zsh/local.sh" >&2
+    exit 1
+fi
+
+if [[ "$BACKUP_CURSOR_AUTH" -eq 1 && "$BACKUP_SECRETS" -eq 0 ]]; then
+    echo "==> backup: cursor-auth only (target=$BACKUP_TARGET)"
+    "$ROOT/scripts/cursor-auth-backup.sh" --verify
+    if git -C "$BACKUP_REPO_ROOT" rev-parse --git-dir >/dev/null 2>&1; then
+        git -C "$BACKUP_REPO_ROOT" add "$BACKUP_ROOT/cursor-auth"
+        if ! git -C "$BACKUP_REPO_ROOT" diff --cached --quiet; then
+            echo "==> backup: commit cursor-auth ($BACKUP_TARGET)"
+            git -C "$BACKUP_REPO_ROOT" commit -m "backup: cursor-auth $BACKUP_TARGET"
+        fi
+        if git -C "$BACKUP_REPO_ROOT" rev-parse '@{u}' >/dev/null 2>&1; then
+            ahead="$(git -C "$BACKUP_REPO_ROOT" rev-list --count '@{u}..HEAD' 2>/dev/null || echo 0)"
+            if [[ "$ahead" != "0" ]]; then
+                echo "==> backup: push"
+                git -C "$BACKUP_REPO_ROOT" push
+            fi
+        fi
+    fi
+    echo "==> backup: done → $BACKUP_ROOT/cursor-auth"
+    exit 0
+fi
+
 BACKUP_RUN_BIN="${BACKUP_RUN_BIN:-}"
 if [[ -z "$BACKUP_RUN_BIN" ]]; then
     if command -v backup-run >/dev/null 2>&1; then
@@ -58,16 +89,6 @@ if [[ -z "$BACKUP_RUN_BIN" ]]; then
 fi
 if [[ -z "$BACKUP_RUN_BIN" ]]; then
     echo "backup: backup-run not found — pipx install --force $ROOT" >&2
-    exit 1
-fi
-
-BACKUP_REPO_ROOT="${BACKUP_REPO_ROOT:-$(resolve_backup_repo_root)}"
-BACKUP_ROOT="${BACKUP_ROOT:-$(resolve_backup_root)}"
-BACKUP_TARGET="${BACKUP_TARGET:-$(run_tool_python -c 'from backup_run.config import get_backup_target; print(get_backup_target())')}"
-export BACKUP_REPO_ROOT BACKUP_ROOT BACKUP_TARGET
-
-if [[ "$BACKUP_ROOT" == "$BACKUP_REPO_ROOT" ]]; then
-    echo "backup: BACKUP_ROOT equals repo root — set BACKUP_TARGET in ~/.zsh/local.sh" >&2
     exit 1
 fi
 

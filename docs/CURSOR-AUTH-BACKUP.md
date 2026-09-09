@@ -31,13 +31,13 @@ Passphrase: same as secrets — `op://Personal/drive-backup/password` (default w
 **Prerequisite:** Quit Cursor fully (no Cursor processes in Activity Monitor).
 
 ```bash
-backup --cursor-auth                    # sync + extras + cursor auth + git commit
-# Or standalone:
+backup --cursor-auth                    # cursor auth only (+ git commit/push); quit Cursor first
+# Or standalone (no git):
 ./scripts/cursor-auth-backup.sh --verify
 ./scripts/cursor-auth-backup.sh --no-drive --verify
 ```
 
-`backup --cursor-auth` does **not** run `--secrets`; combine flags if needed: `backup --secrets --cursor-auth`.
+`backup --cursor-auth` skips sync/extras. For full snapshot + secrets use `backup --secrets`. For all three: `backup` then `backup --secrets` and `backup --cursor-auth` separately.
 
 ## Restore
 
