@@ -37,6 +37,8 @@ secrets_build_file_entries() {
     "dotfiles/netrc|$HOME/.netrc"
     "codex/auth.json|$HOME/.codex/auth.json"
     "pi/agent/auth.json|$HOME/.pi/agent/auth.json"
+    "dotfiles/cloudflared/access-omlx.env|$HOME/.cloudflared/access-omlx.env"
+    "dotfiles/cloudflared/ff82357a-9260-4fff-8205-feb5136b2f88.json|$HOME/.cloudflared/ff82357a-9260-4fff-8205-feb5136b2f88.json"
     "repos/personal/agent/synkube-agents/agent-runtime/compose/.env|$REPOS_ROOT/personal/agent/synkube-agents/agent-runtime/compose/.env"
   )
   [[ -f "$ZSHENV_ROOT/shell/secret/home.sh" ]] &&

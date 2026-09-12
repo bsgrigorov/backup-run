@@ -32,7 +32,8 @@ Data lands in `~/dev/repos/zzz/backup/<BACKUP_TARGET>/` (`bsgrigorov/backup`, pr
 | `~/.kube/config` | `dotfiles/.kube/` | Cluster access; private repo only. Prune work contexts on personal Mac after restore. |
 | `~/.kubech/kubech` | — | **Not backed up** — install via `zsh-env/init.sh` or `git clone` (see zsh-env README). Required for `kt`. |
 | `~/.docker/config.json` | `dotfiles/.docker/` | Uses macOS keychain for auth |
-| `~/.cloudflared/config.yml` | `dotfiles/.cloudflared/` | |
+| `~/.cloudflared/config.yml` | `dotfiles/.cloudflared/` | Ingress only — **not** tunnel credentials or Access env |
+| `~/.pi/agent/web-search.json` | `dotfiles/.pi/agent/` | pi-web-access workflow (non-secret) |
 | `~/.colima/_templates/default.yaml` | `dotfiles/.colima/` | |
 | `~/.orbstack/vmconfig.json`, `~/.orbstack/config/docker.json` | `dotfiles/.orbstack/` | VM CPU/RAM/k8s settings; not `run/`, `log/`, or `vmstate.json` (runtime) |
 | `~/.config/aws-sso/config.yaml` | `dotfiles/.config/aws-sso/` | |
@@ -47,7 +48,7 @@ Data lands in `~/dev/repos/zzz/backup/<BACKUP_TARGET>/` (`bsgrigorov/backup`, pr
 | `~/.codex/config.toml` | `dotfiles/.codex/` | Model/plugins. **Not** `auth.json` (gitignored if present). |
 | `~/.conductor/settings.toml` | `dotfiles/.conductor/` | Tiny non-secret defaults. |
 | `~/.config/opencode/opencode.jsonc`, `tui.json`, `package.json` | `dotfiles/.config/opencode/` | LiteLLM provider + models via `{env:LITELLM_API_KEY}`. **Not** `node_modules/` or lockfiles. |
-| `~/.pi/agent/models.json`, `settings.json` | `dotfiles/.pi/agent/` | LiteLLM custom provider + defaults. **Not** `auth.json`, `sessions/`, or `skills/` (symlinks to `~/.agents/skills` → `kb/agents`). |
+| `~/.pi/agent/models.json`, `settings.json`, `web-search.json` | `dotfiles/.pi/agent/` | LiteLLM custom provider + defaults; pi-web-access workflow. **Not** `auth.json`, `sessions/`, or `skills/` (symlinks to `~/.agents/skills` → `kb/agents`). |
 
 ### App settings (plist + Application Support)
 
@@ -192,6 +193,7 @@ Public SSH (`config`, `known_hosts`, `*.pub`) are easy to recreate; private keys
 | GPG secret keys | 1Password + secrets bundle (`backup --secrets --with-gpg`) — `backup/manual/gpg.md`, `secrets.md` |
 | SSH private keys | 1Password SSH Key + Drive `.age` + secrets bundle — `backup/manual/ssh.md`, `secrets.md` |
 | `zsh-env/shell/secret/` | secrets bundle (+ 1Password) — `backup --secrets` |
+| `~/.cloudflared/access-omlx.env`, tunnel `*.json` credentials | secrets bundle — pair with `dotfiles/.cloudflared/config.yml` |
 | Agent-fleet `secrets/` trees | secrets bundle (gitignored under `personal/agent/`) |
 | `~/.codex/auth.json`, `~/.pi/agent/auth.json` | secrets bundle |
 | `~/.aws/credentials` | secrets bundle (filtered; allowlist `manifest/secrets-allowlist-<BACKUP_TARGET>.conf`) |
