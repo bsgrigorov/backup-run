@@ -74,6 +74,24 @@ uv run ruff format .
 uv build
 ```
 
+## Scheduled backup (LaunchAgent)
+
+Personal Mac daily sync (no sudo, no secrets):
+
+```bash
+# Template: backup/<BACKUP_TARGET>/configs/launchagents/com.bsgrigorov.backup-mac.plist
+cp ~/dev/repos/zzz/backup/macbook-pro-2023/configs/launchagents/com.bsgrigorov.backup-mac.plist \
+  ~/Library/LaunchAgents/
+launchctl bootout "gui/$(id -u)/com.bsgrigorov.backup-mac" 2>/dev/null || true
+launchctl bootstrap "gui/$(id -u)" ~/Library/LaunchAgents/com.bsgrigorov.backup-mac.plist
+```
+
+Runs `scripts/scheduled-backup.sh` → plain `backup` (not `backup -s`) at **11:00** local time.
+
+Logs: `~/.local/log/` — `backup-mac.log`, `backup-mac.error.log`, plus launchd `backup-mac.launchd*.log`.
+
+Smoke test: `launchctl kickstart -kp "gui/$(id -u)/com.bsgrigorov.backup-mac"`
+
 ## Weekly cron
 
 `zsh-env/tasks/crontab/weekly.sh` calls `backup`.

@@ -201,9 +201,14 @@ if [[ "$VERIFY" -eq 1 ]]; then
   unzip -t -q "$DEC"
   unzip -q "$DEC" -d "$WORK/tree"
   # Prove real files came back, not just a well-formed zip.
-  for f in README.md packages/Brewfile manual/apps.md; do
+  for f in README.md manual/apps.md; do
     test -s "$WORK/tree/backup/$f" || { echo "ERROR: missing $f in restore" >&2; exit 1; }
   done
+  brewfile="$(find "$WORK/tree/backup" -path '*/packages/Brewfile' -type f | head -1)"
+  [[ -n "$brewfile" && -s "$brewfile" ]] || {
+    echo "ERROR: missing */packages/Brewfile in restore" >&2
+    exit 1
+  }
   echo "restored $(find "$WORK/tree" -type f | wc -l | tr -d ' ') files"
   echo "==> verify passed"
 fi
