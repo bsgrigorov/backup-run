@@ -9,7 +9,7 @@
 #   ./scripts/offsite-secrets.sh --verify
 #   ./scripts/offsite-secrets.sh --with-gpg
 #   ./scripts/offsite-secrets.sh --no-drive          # git repo only
-#   BACKUP_OFFSITE_OP_REF='op://Personal/drive-backup/password' ./scripts/offsite-secrets.sh
+#   BACKUP_OFFSITE_OP_REF='op://<vault>/encrypt-drive-backup/password' ./scripts/offsite-secrets.sh
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"

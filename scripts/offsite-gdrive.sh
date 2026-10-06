@@ -11,7 +11,7 @@
 #   ./scripts/offsite-gdrive.sh --verify        # then decrypt+check in a temp dir
 #   ./scripts/offsite-gdrive.sh --dry-run
 #   BACKUP_OFFSITE_PASSPHRASE='…' ./scripts/offsite-gdrive.sh   # non-interactive
-#   BACKUP_OFFSITE_OP_REF='op://Personal/drive-backup/password' ./scripts/offsite-gdrive.sh
+#   BACKUP_OFFSITE_OP_REF='op://<vault>/encrypt-drive-backup/password' ./scripts/offsite-gdrive.sh
 #
 # Restore into a throwaway temp dir:
 #   work="$(mktemp -d "${TMPDIR:-/tmp}/backup-restore.XXXXXX")"
@@ -19,6 +19,10 @@
 #   unzip "$work/backup.zip" -d "$work"    # inspect, then remove "$work"
 # Or run with --verify to prove the artifact and clean up automatically.
 set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=_common.sh
+source "$SCRIPT_DIR/_common.sh"
 
 BACKUP_ROOT="${BACKUP_ROOT:-$HOME/dev/repos/zzz/backup}"
 GDRIVE_BACKUP="${GDRIVE_BACKUP:-$HOME/Library/CloudStorage/GoogleDrive-b.s.grigorov@gmail.com/My Drive/Documents/Backup}"
@@ -110,7 +114,7 @@ resolve_passphrase() {
     printf '%s' "$BACKUP_OFFSITE_PASSPHRASE"
     return 0
   fi
-  local op_ref="${BACKUP_OFFSITE_OP_REF:-op://Personal/drive-backup/password}"
+  local op_ref="${BACKUP_OFFSITE_OP_REF:-$BACKUP_OFFSITE_OP_REF_DEFAULT}"
   local op_explicit=0
   [[ -n "${BACKUP_OFFSITE_OP_REF:-}" ]] && op_explicit=1
   local pass=""

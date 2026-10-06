@@ -35,7 +35,7 @@ Export Cursor auth (SQLite rows + Keychain + CLI slices), tar, age-encrypt:
 
   Drive (optional): $GDRIVE_BACKUP/${DRIVE_NAME}-\${BACKUP_TARGET}.tar.age
 
-Quit Cursor before running. Passphrase: same as secrets (op://Personal/drive-backup/password).
+Quit Cursor before running. Passphrase: encrypt-drive-backup (see docs/ENCRYPTION.md).
 Restore: ./scripts/cursor-auth-restore.sh
 Docs: docs/CURSOR-AUTH-BACKUP.md
 EOF

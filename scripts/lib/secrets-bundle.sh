@@ -82,7 +82,7 @@ OSA
 
 secrets_resolve_passphrase() {
   local pass=""
-  local op_ref="${BACKUP_OFFSITE_OP_REF:-op://Personal/drive-backup/password}"
+  local op_ref="${BACKUP_OFFSITE_OP_REF:-${BACKUP_OFFSITE_OP_REF_DEFAULT:-op://Personal/encrypt-drive-backup/password}}"
   local op_explicit=0
   [[ -n "${BACKUP_OFFSITE_OP_REF:-}" ]] && op_explicit=1
 

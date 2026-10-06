@@ -24,7 +24,7 @@ Deterministic backup/restore for **Cursor login state only** (not chat history o
 | Staging (gitignored) | `backup/<BACKUP_TARGET>/secrets/.stage-cursor-auth/` |
 | Drive (optional) | `…/Backup/cursor-auth-<BACKUP_TARGET>.tar.age` |
 
-Passphrase: same as secrets — `op://Personal/drive-backup/password` (default when `op` is available).
+Passphrase: same as secrets bundle — 1Password **encrypt-drive-backup** (`BACKUP_OFFSITE_OP_REF` / `backup-run/docs/ENCRYPTION.md`).
 
 ## Backup
 

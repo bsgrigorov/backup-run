@@ -28,6 +28,10 @@ run_tool_python() {
     return 1
 }
 
+# Default age passphrase for backup-run offsite artifacts (1Password item encrypt-drive-backup).
+# Override per machine in ~/.zsh/local.sh: export BACKUP_OFFSITE_OP_REF='op://<vault>/encrypt-drive-backup/password'
+BACKUP_OFFSITE_OP_REF_DEFAULT="${BACKUP_OFFSITE_OP_REF_DEFAULT:-op://Personal/encrypt-drive-backup/password}"
+
 # Machine snapshot root: <backup-repo>/<BACKUP_TARGET>/ (from ~/.zsh/local.sh).
 resolve_backup_root() {
     if [[ -n "${BACKUP_ROOT:-}" ]]; then

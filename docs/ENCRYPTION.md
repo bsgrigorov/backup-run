@@ -1,7 +1,7 @@
 # Offsite encryption / decryption
 
-`scripts/offsite-gdrive.sh` writes authenticated age passphrase ciphertext
-(`.age`). Same recipe as the `encrypt` skill and `crypt` CLI.
+Backup-run writes **age** passphrase ciphertext (`.age`) for offsite copies. Same
+crypto as the `encrypt` skill and `crypt` CLI.
 
 ## Method
 
@@ -13,89 +13,102 @@ age -d -o FILE FILE.age     # decrypt
 | Piece | Why |
 |---|---|
 | age (ChaCha20-Poly1305) | Authenticated: wrong passphrase or tampered blob fails loudly |
-| Passphrase | Lives in **1Password** only, never next to the `.age` in Drive |
+| Passphrase | 1Password only — never beside the `.age` on Drive or in git |
 
-Prefer interactive prompt, `op read`, or the script’s hidden GUI prompt. Never
-put the passphrase in argv (`ps`).
+Use `op read`, interactive prompt, or the script GUI prompt. Never pass the
+passphrase on the command line (`ps`).
 
-Legacy `.enc` (OpenSSL AES-256-CBC + PBKDF2) is restore-only via
-`crypt -d -m openssl-10k`. Do not create new `.enc`. Never rename `.enc` → `.age`.
+## Passphrases (1Password)
 
-## Repo snapshot (script)
+One item per **job**. Do not reuse the backup pipeline passphrase for ad-hoc files.
 
-Fixed name: `git-bsgrigorov-backup.zip.age` — each run **overwrites**. Destination:
+| Item name | Used for |
+|-----------|----------|
+| **encrypt-drive-backup** | All **backup-run** age output: offsite backup zip, secrets bundle, optional cursor-auth bundle, and (if you refresh them) standalone SSH `.age` on Drive |
+| **encrypt-secrets-local** | Ad-hoc `age -p` / `encrypt` skill — recovery codes, one-off exports, anything **outside** backup-run |
 
-`~/Library/CloudStorage/GoogleDrive-…/My Drive/Documents/Backup/`
+**Backup-run default:** 1Password item `encrypt-drive-backup`, field `password`.
+
+If `BACKUP_OFFSITE_OP_REF` is unset, scripts read:
+
+`op://Personal/encrypt-drive-backup/password`
+
+(`BACKUP_OFFSITE_OP_REF_DEFAULT` in `scripts/_common.sh` — keeps `op read` working
+on this install without extra shell config.)
+
+Override per Mac or vault:
+
+```bash
+# ~/.zsh/local.sh
+export BACKUP_OFFSITE_OP_REF='op://Personal/encrypt-drive-backup/password'
+```
+
+Non-interactive: `BACKUP_OFFSITE_PASSPHRASE` (env, CI only) or `op read` on
+`BACKUP_OFFSITE_OP_REF`.
+
+**Not** the age backup passphrase: unlocking your GPG key during
+`offsite-secrets.sh --with-gpg`.
+
+Legacy `.enc` (OpenSSL) → `crypt -d -m openssl-10k` only. Do not create new `.enc`.
+
+## Offsite backup zip (`offsite-gdrive.sh`)
+
+Zips the **backup data repo working tree** (no `.git`), encrypts to Drive.
+
+| Env | Role |
+|-----|------|
+| `BACKUP_ROOT` | Backup data repo (default from manifest) |
+| `GDRIVE_BACKUP` | Drive folder for `.age` files (default: Google Drive `Documents/Backup`) |
+| Output name | `git-bsgrigorov-backup.zip.age` (fixed; overwrites each run) |
 
 ```bash
 ./scripts/offsite-gdrive.sh --dry-run
-./scripts/offsite-gdrive.sh --verify    # write, decrypt, check, clean temp
-
-# Passphrase: prompt, or BACKUP_OFFSITE_PASSPHRASE, or BACKUP_OFFSITE_OP_REF='op://Personal/drive-backup/password'
+./scripts/offsite-gdrive.sh --verify
 ```
 
-Manual decrypt:
+Decrypt example (replace `$GDRIVE_BACKUP` and artifact name):
 
 ```bash
 work="$(mktemp -d "${TMPDIR:-/tmp}/backup-restore.XXXXXX")"
-age -d -o "$work/backup.zip" \
-  ~/Library/CloudStorage/GoogleDrive-b.s.grigorov@gmail.com/"My Drive"/Documents/Backup/git-bsgrigorov-backup.zip.age
+age -d -o "$work/backup.zip" "$GDRIVE_BACKUP/git-bsgrigorov-backup.zip.age"
 unzip "$work/backup.zip" -d "$work"
 # inspect, then remove "$work"
 ```
 
 ## Verify
 
-After encrypt (plaintext still present): decrypt to a temp file and `cmp -s`
-against the original before deleting plaintext.
+After encrypt: decrypt to a temp file and `cmp -s` against plaintext before deleting
+the source.
 
-Re-check an existing `.age` (no plaintext): decrypt to a temp dir, confirm age
-exit 0 and expected type (`%PDF` header, non-empty text, or `unzip -t` for zip).
-Do not print secret contents. Wrong passphrase → FAIL.
+On an existing `.age`: decrypt to temp, check exit 0 and shape (`unzip -t` for
+zips, non-empty file). Do not print secret contents.
 
-```bash
-# Encrypt
-age -p -o FILE.age FILE
-# Decrypt once to verify, then delete plaintext from Drive (and Drive trash)
-
-# Decrypt to a throwaway dir
-work="$(mktemp -d "${TMPDIR:-/tmp}/drive-decrypt.XXXXXX")"
-age -d -o "$work/FILE" FILE.age
-# inspect, then remove "$work"
-```
+`--verify` on offsite scripts decrypts into a temp dir and removes it.
 
 ## Secrets bundle
 
-Gap-fill secrets (shell, SSH, npmrc, agent-fleet `secrets/`, filtered AWS credentials). Per machine (`BACKUP_TARGET`):
+Per machine (`BACKUP_TARGET`):
 
 | Output | Path |
 |--------|------|
-| Git (committed) | `backup/<BACKUP_TARGET>/secrets/bundle.zip.age` |
-| Drive (optional) | `…/Backup/mac-secrets-<BACKUP_TARGET>.zip.age` |
+| Git (private backup repo) | `<backup-repo>/<BACKUP_TARGET>/secrets/bundle.zip.age` |
+| Drive (optional) | `$GDRIVE_BACKUP/mac-secrets-<BACKUP_TARGET>.zip.age` |
 
 ```bash
-backup --secrets                              # sync + extras + secrets + git commit
+backup --secrets
 ./scripts/offsite-secrets.sh --dry-run
-./scripts/offsite-secrets.sh --with-gpg       # includes GPG export
+./scripts/offsite-secrets.sh --with-gpg   # adds GPG export; GPG unlock is separate
 ```
 
-Passphrase: `op://Personal/drive-backup/password` (default when `op` is available). Restore: `backup/manual/secrets.md`.
+Restore: `backup/manual/secrets.md` in the backup data repo.
 
 ## Cursor auth bundle
 
-IDE/CLI login and MCP OAuth tokens (not chat history):
-
-```bash
-backup --cursor-auth
-./scripts/cursor-auth-restore.sh --confirm
-```
-
-See [CURSOR-AUTH-BACKUP.md](CURSOR-AUTH-BACKUP.md).
+Optional; same **encrypt-drive-backup** passphrase. See [CURSOR-AUTH-BACKUP.md](CURSOR-AUTH-BACKUP.md).
 
 ## Related
 
-- Skill (agent): `encrypt` — age passphrase for files; `crypt` for OpenSSL leftovers
-- CLI: `zsh-env/scripts/bin/crypt` (default age; `-m openssl-10k` for old `.enc`)
-- Drive folder inventory: `kb-projects/projects/mac-setup/backup/drive-encryption.md`
-- Restore overview: `kb-projects/projects/mac-setup/restore/` § Offsite
-- Weekly hook (commented): `zsh-env/tasks/crontab/weekly.sh`
+- `encrypt` skill — ad-hoc age (`encrypt-secrets-local`)
+- `zsh-env/scripts/bin/crypt` — OpenSSL leftovers
+- Machine runbooks: backup data repo `manual/secrets.md`, `manual/ssh.md`
+- KB inventory (optional): `kb-projects/projects/mac-setup/backup/drive-encryption.md`
